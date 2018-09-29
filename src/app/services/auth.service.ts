@@ -9,8 +9,14 @@ export class AuthService {
   private _isUserLoggedIn: boolean;
 
   constructor() { 
-    if(!environment.production){
+    /* if(!environment.production){
       this.isUserLoggedIn = true;
+    } */
+    const hasLoginToken = localStorage.getItem('personal-quiz-login-token')
+    if(hasLoginToken){
+      this.isUserLoggedIn = true;
+    } else {
+      this.isUserLoggedIn = false;
     }
   }
 
