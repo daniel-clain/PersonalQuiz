@@ -1,24 +1,46 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { AppRoutingModule } from './modules/app-routing.module';
 
-import { AppComponent } from './app.component';
-import { AppRoutingModule } from './app-routing.module';
-import { LoginComponent } from './login/login.component';
-import { AuthGuard } from './login/auth.guard';
-import { AuthService } from './services/auth.service';
-import { LandingPageComponent } from './landing-page/landing-page.component';
+import { environment } from '../environments/environment';
+
+import { AngularFireModule } from '@angular/fire';
+import { AngularFirestoreModule } from 'angularfire2/firestore';
+import { AngularFireAuthModule } from 'angularfire2/auth';
+
+import { AuthGuard } from './guards/auth.guard'
+
+// Views
+import { AppComponent } from './components/views/app/app.component';
+import { LoginComponent } from './components/views/login/login.component';
+import { QuizComponent } from './components/views/quiz/quiz.component';
+import { QuestionManagementComponent } from './components/views/question-management/question-management.component';
+
+// Partials
+import { MainMenuComponent } from './components/partials/main-menu/main-menu.component';
+import { CategoryManagementComponent } from './components/partials/category-management/category-management.component';
+
 
 @NgModule({
   declarations: [
     AppComponent,
     LoginComponent,
-    LandingPageComponent
+    MainMenuComponent,
+    QuizComponent,
+    CategoryManagementComponent,
+    QuestionManagementComponent
   ],
   imports: [
+    AngularFireModule.initializeApp(environment.firebase),
+    AngularFirestoreModule,
+    AngularFireAuthModule,
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    ReactiveFormsModule,
+    FormsModule
   ],
-  providers: [AuthGuard, AuthService],
+  providers: [AuthGuard],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
