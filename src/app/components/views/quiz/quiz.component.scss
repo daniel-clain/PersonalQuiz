@@ -1,0 +1,42 @@
+
+.quiz-question{
+    margin: 1rem 0;
+    font-family: cursive;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 7px;
+    border: dashed 4px #8e9394;
+}
+.quiz.list{
+    .list__item{
+        position: relative;
+        &__mark{
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            padding-right: 0.5rem;
+        }
+        &--expanded {
+            margin-top: -.2rem;
+        }
+    }
+}
+
+
+.question.list{
+    .list__item {
+        border-left: 1rem solid;
+        margin: 1rem;
+        padding-left: 1rem;
+        &--expanded {
+            cursor: default;
+        }
+        &--green {
+            border-color: #bbecbb;
+        }
+        &--red {
+            border-color: #f79d9d;
+        }
+    }
+}
