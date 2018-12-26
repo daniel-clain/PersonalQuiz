@@ -1,0 +1,32 @@
+
+<h3>Add Category</h3>
+
+<form [formGroup]="newCategoryForm" (ngSubmit)="submitNewCategory()">
+    <div class="field">
+        <span class="field__name">Category Name: </span>
+        <input class="field__input" formControlName="value">
+    </div>
+    <button>Submit</button>
+</form>
+
+<hr>
+
+<h2>Categories List</h2>
+    <div *ngFor="let category of categories$ | async">
+      <div class="list__item" (click)="selectCategory(category)" *ngIf="!selectedCategory || category.id !== selectedCategory.id">
+          {{category.value}}
+      </div>
+        <div class="list__item--expanded" *ngIf="selectedCategory && category.id === selectedCategory.id">
+          <hr>
+          <h3>Edit Category: {{category.value}}</h3>
+          <div class="field">
+              <span class="field__name">Category: </span>
+              <input class="field__input" [(ngModel)]="selectedCategory.value">
+          </div>
+            
+          <button (click)="submitUpdateCategory()">Update</button>
+          <button type="button" (click)="selectCategory(null)">Close</button>
+          <button (click)="deleteCategory(category.id)">Delete</button>
+          <hr>
+        </div>
+    </div>

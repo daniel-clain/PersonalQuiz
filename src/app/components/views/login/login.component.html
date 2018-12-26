@@ -1,0 +1,7 @@
+
+<input class="field__input" type="email" placeholder="email" #email>
+<input class="field__input" type="password" placeholder="password" #password>
+<button (click)="loginHandler(email.value, password.value)">Login</button>
+<button (click)="signupHandler(email.value, password.value)">Signup</button>
+
+<button (click)="signInWithGoogle()">login with google</button>

@@ -1,0 +1,72 @@
+
+<hr>
+<button (click)="loginWithPopup()">login with popup</button>
+
+<h3>Add Question</h3>
+
+<form [formGroup]="newQuestionForm" (ngSubmit)="submitNewQuestion()">
+    <div class="field">
+        <span class="field__name">Question: </span>
+        <input class="field__input" formControlName="value">
+    </div>
+    <div class="field">
+        <span class="field__name">Category: </span>
+        <select class="field__input" formControlName="category">
+            <option 
+                *ngFor="let category of categories"
+                [value]="category.value">
+                {{category.value}}
+            </option>
+        </select>
+    </div>
+    <div class="field">
+        <span class="field__name">Correct Answer: </span>
+        <textarea class="field__text-area field__input"  formControlName="correctAnswer"></textarea>
+    </div>
+    <button>Submit</button>
+</form>
+
+<hr>
+
+<button (click)="setSubsection('Questions List')">Questions List</button>
+<button (click)="setSubsection('Category Management')">Category Management</button>
+
+<div class="list" *ngIf="selectedSubsection === 'Questions List'">
+    <h2>Questions List</h2>
+    <div *ngFor="let question of questions$ | async">
+        <div class="list__item" (click)="selectQuestion(question)" *ngIf="!selectedQuestion || question.id !== selectedQuestion.id">
+            {{question.value}}
+        </div>
+        <div class="list__item--expanded" *ngIf="selectedQuestion && question.id === selectedQuestion.id">
+            <hr>
+            <h3>Edit Question: {{question.value}}</h3>
+            <div class="field">
+                <span class="field__name">Question: </span>
+                <input class="field__input" [(ngModel)]="selectedQuestion.value">
+            </div>
+            <div class="field">
+                <span class="field__name">Category: </span>
+                <select class="field__input" [(ngModel)]="selectedQuestion.category">
+                    <option 
+                        *ngFor="let category of categories"
+                        [value]="category.value" 
+                        [selected]="selectedQuestion.category === category.value">
+                        {{category.value}}
+                    </option>
+                </select>
+            </div>
+            <div class="field">
+                <span class="field__name">Correct Answer: </span>
+                <textarea class="field__text-area field__input" [(ngModel)]="selectedQuestion.correctAnswer"></textarea>
+            </div>
+            <button (click)="submitUpdatedQuestion()">Update</button>
+            <button type="button" (click)="selectQuestion(null)">Close</button>
+            <button (click)="deleteQueston(question.id)">Delete</button>
+            <hr>
+        </div>
+    </div>
+</div>
+
+
+<app-category-management class="questions-list" *ngIf="selectedSubsection === 'Category Management'"></app-category-management>
+

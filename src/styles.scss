@@ -1,0 +1,79 @@
+/* Color pallet http://paletton.com/#uid=23n0u0kcglL4Zvw8Eq6eXhmkwen */
+
+html{
+    background-color: #172225;
+    font-size: 87.5%;
+    height: 100%;
+}
+body{
+    font-family: Helvetica, sans-serif;    
+    background: #43636B;
+    color: white;
+    text-shadow: 1px 1px #222;
+    padding: 1.5rem;
+    max-width: 600px;
+    margin: auto;
+    height: auto;
+    min-height: 100%;
+    box-sizing: border-box;
+    overflow-y: scroll;
+}
+
+button{
+    color: white;
+    background-color: #AD8C6B;
+    outline: none;
+    border-color: #8A6A4A;
+    padding: 4px 8px;
+    border-radius: 5px;
+    text-shadow: 1px 1px #222;
+    margin: 3px 5px 3px 0;
+    font-weight: 600;
+    font-family: monospace;
+    cursor: pointer;
+    font-size: 1.2rem;
+
+    &:active {
+        background: #8A6A4A;
+        border-color: #724E29;
+    }
+}
+
+input, textarea, select{
+    &:disabled{
+        background-color: #e4e4e4;
+        color: #82807f;
+    }
+}
+
+.list{
+    &__item{    
+        background-color: #84979B;
+        margin-bottom: .2rem;
+        padding: .2rem .5rem;
+    }
+}
+
+
+.field{
+    margin-bottom: 1rem;
+    &__name{
+        line-height: 1.5rem;
+        font-family: monospace;
+        font-size: 1.2rem;
+    }
+    &__input, &__text-area{
+        display: block;
+        box-sizing: border-box;
+        font-family: cursive;
+        padding: 0.5rem;
+        border-radius: 5px;
+        font-size: 1rem;
+        width: 100%;
+        background-color: #fffaf6;
+        margin-bottom: .2rem;
+    }
+    &__text-area{
+        height: 6rem;
+    }
+}

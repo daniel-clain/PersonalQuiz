@@ -1,0 +1,93 @@
+
+<div *ngIf="quiz && !showQuizResults">
+    <h3>Question {{questionNumber}} of {{questionsInQuiz}}</h3>
+    <div class="quiz-question">{{quiz.questionsAndAnswers[questionNumber-1].question.value}}</div>
+
+    <form [formGroup]="questionAnswerForm" (ngSubmit)="submitAnswer()">
+        <div class="field">
+            <span class="field__name">Your Answer: </span><br/>
+            <textarea 
+                class="field__text-area field__input"  
+                formControlName="value" 
+                [readonly]="quiz.questionsAndAnswers[questionNumber-1].answer">
+            </textarea>
+        </div>
+        <button [disabled]="quiz.questionsAndAnswers[questionNumber-1].answer">Submit</button>
+    </form>
+
+    <div *ngIf="quiz.questionsAndAnswers[questionNumber-1] &&  quiz.questionsAndAnswers[questionNumber-1].answer">
+        <h3>The Correct Answer Is:</h3>
+        <h3>{{quiz.questionsAndAnswers[questionNumber-1].question.correctAnswer}}</h3>
+        <div>
+            Mark the answer correct or incorrect:<br>
+            <button (click)="markAnswer('correct')">Correct</button>
+            <button (click)="markAnswer('incorrect')">Incorrect</button>
+        </div>
+    </div>
+
+    <button 
+        *ngIf="quiz.questionsAndAnswers[questionNumber-1].answer && quiz.questionsAndAnswers[questionNumber-1].answer.markedAs !== undefined" 
+        (click)="questionNumber < quiz.questionsAndAnswers.length ? nextQuestion() : completeQuiz()">
+        {{questionNumber < quiz.questionsAndAnswers.length ? "Next" : "Complete"}}
+    </button>
+
+</div>
+<div *ngIf="quiz && showQuizResults">
+    <button (click)="startNewQuiz()">Next Quiz?</button>
+</div>
+
+<hr>
+
+
+
+<button (click)="setSubsection('Quizzes List')">Quizzes List</button>
+
+<div class="quiz list" *ngIf="selectedSubsection === 'Quizzes List'">
+    <h2>Past Quizzes</h2>
+    <div *ngFor="let quiz of quizzes$ | async">
+        <div (click)="selectQuiz(quiz)" class="quiz list__item " >
+            {{quiz.dateCompleted | date:'short' }}
+            <span class="list__item__mark">Mark: {{ getQuizMark(quiz.questionsAndAnswers) }}/{{quiz.questionsAndAnswers.length}}</span>
+        </div>
+        <div class="list__item list__item--expanded" *ngIf="selectedQuiz && quiz.id === selectedQuiz.id">
+            <hr>
+            <h4>Quiz Question And Answers</h4>
+            <div class="question list">
+                <div *ngFor="let questionAndAnswer of quiz.questionsAndAnswers">
+                    <div [ngClass]="['list__item', questionAndAnswer.answer.markedAs?'list__item--green':'list__item--red']" (click)="selectQuestion(questionAndAnswer.question)" *ngIf="!selectedQuestion || questionAndAnswer.question.id !== selectedQuestion.id">
+                        {{questionAndAnswer.question.value}}
+                    </div>
+                    <div [ngClass]="['list__item', 'list__item--expanded', questionAndAnswer.answer.markedAs?'list__item--green':'list__item--red']"  *ngIf="selectedQuestion && questionAndAnswer.question.id === selectedQuestion.id">
+                        <hr>
+                        <div class="field">
+                            <span class="field__name">Question: </span>
+                            <input class="field__input" [(ngModel)]="questionAndAnswer.question.value" disabled="disabled">
+                        </div>
+                        <div class="field">
+                            <span class="field__name">Category: </span>
+                            <select class="field__input" [(ngModel)]="questionAndAnswer.question.category" disabled="disabled">
+                                <option 
+                                    *ngFor="let category of categories"
+                                    [value]="category.value">
+                                    {{category.value}}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <span class="field__name">Correct Answer: </span>
+                            <textarea class="field__text-area field__input" disabled="disabled" [(ngModel)]="questionAndAnswer.question.correctAnswer"></textarea>
+                        </div>
+                        <div class="field">
+                            <span class="field__name">Your Answer: </span>
+                            <textarea class="field__text-area field__input" disabled="disabled" [(ngModel)]="questionAndAnswer.answer.value"></textarea>
+                        </div>
+                        <button type="button" (click)="selectQuestion(null)">Close</button>
+                        <hr>
+                    </div>
+                </div>
+            </div>
+            <button type="button" (click)="selectQuiz(null)">Close</button>
+            <hr>
+        </div>
+    </div>
+</div>
