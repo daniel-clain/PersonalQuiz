@@ -5,7 +5,7 @@
 export const environment = {
   production: false,
   firebase: {
-    apiKey: "AIzaSyDpdAMUNGh35RA5KagZ_rDugG75H8XF7RE",
+    apiKey: "AIzaSyByoHAvuRSgSEa0cnVyX1D9KbcS_rQXoc4",
     authDomain: "personal-quiz-54618.firebaseapp.com",
     databaseURL: "https://personal-quiz-54618.firebaseio.com",
     projectId: "personal-quiz-54618",

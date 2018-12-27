@@ -2,16 +2,13 @@ import { Question } from './question'
 import { Answer } from './answer';
 export interface Quiz{
     id: string;
-    userId: string;
     questionsAndAnswers: QuestionAndAnswer[];
     dateCompleted: Date;
 }
 
-export interface QuizShallow{
-    id: string;
-    userId: string;
-    questionsAndAnswers: QuestionAndAnswerIds[];
-    dateCompleted: Date;
+export interface QuizFlat{
+    questionsAndAnswersIds: QuestionAndAnswerIds[];
+    dateCompleted: any;
 }
 
 export interface QuestionAndAnswer{

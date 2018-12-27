@@ -1,30 +1,29 @@
 import { Injectable } from '@angular/core';
-import { Quiz, QuestionAndAnswer, QuizShallow, QuestionAndAnswerIds } from 'src/app/models/quiz';
-import { QuestionsService } from '../questions/questions.service';
+import { Quiz, QuestionAndAnswer, QuestionAndAnswerIds, QuizFlat } from 'src/app/models/quiz';
 import { Question } from 'src/app/models/question';
 import { Answer } from 'src/app/models/answer';
-import { DocumentReference, DocumentSnapshot } from 'angularfire2/firestore';
-import { Observable, Subscriber } from 'rxjs';
-import { User } from 'firebase';
+import { DocumentSnapshot, QueryDocumentSnapshot } from 'angularfire2/firestore';
+import { Observable } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
-import { AnswersService } from '../answers/answers.service';
-import { FirestoreService } from '../firestore/firestore.service';
-import { map } from 'rxjs/operators';
+import { AnswerService } from '../answer/answer.service';
+import { switchMap } from 'rxjs/operators';
+import { DataService } from '../data/data.service';
+import { QuestionService } from '../question/question.service';
+import { Category } from 'src/app/models/category';
+import { CollectionNames } from 'src/app/models/collection-enum';
 
-interface QuestionWithRating{
+interface QuestionWithRating extends Question {
   id: string;
-  userId: string;
-  category: string;
+  category: Category;
   value: string;
   correctAnswer: string;
   dateUpdated: Date;
   rating: 1 | 2 | 3 | 4 | 5;
-
 }
 
-interface TimesAnswered{
-    timesAnswered: number;
-    timesAnsweredCorrectly: number;
+interface TimesQuestionAnswered {
+  total: number;
+  correctCount: number;
 }
 
 @Injectable({
@@ -32,202 +31,237 @@ interface TimesAnswered{
 })
 export class QuizService {
 
-  questionsInQuiz = 1;
+  questionsInQuiz = 2;
   quizzes: Quiz[] = [];
-  
-  constructor(private _firestoreService: FirestoreService, private _questionsService: QuestionsService, private _authService: AuthService, private _answersService: AnswersService) {}
+
+  constructor(private _authService: AuthService, private _dataService: DataService, private _questionService: QuestionService, private _answerService: AnswerService) { }
 
 
-  get quizzes$(): Observable<Quiz[]>{
-    return new Observable((subscriber: Subscriber<Quiz[]>) => {
-      const subscription = this.quizzesShallow$.subscribe((quizShallow: QuizShallow[]) => {
-        subscription.unsubscribe();
-        this.transformQuestionsAndAnswers(quizShallow)
-        .then((quizzes: Quiz[]) => subscriber.next(quizzes))
-      })
-    })
-  }
+  get quizzes$(): Observable<Quiz[]> {
+    return this._dataService.getCollectionData(CollectionNames.Quizzes).pipe(switchMap(
+      (quizzesSnapshots: QueryDocumentSnapshot<QuizFlat>[]) => {
+        return new Observable((subscriber) => {
 
-  get quizzesShallow$(): Observable<QuizShallow[]>{
-    return this._firestoreService.dataObservable('quizzes')
-    .pipe(map(quizzes => {
-      return quizzes.map(quiz => {
-        quiz.dateCompleted = quiz.dateCompleted.toDate()
-        return <QuizShallow>quiz
-      })
-    }))
-  }
+          const quizPromises: Promise<Quiz>[] =
+            quizzesSnapshots.map((quizSnapshot: DocumentSnapshot<QuizFlat>) => {
+              const question: QuizFlat = quizSnapshot.data();
+              return this.convertToNormalQuiz(question, quizSnapshot.id)
+            })
 
-  transformQuestionsAndAnswers(quizzes: QuizShallow[]): Promise<Quiz[]>{
-    return Promise.all(quizzes.map((quizShallow: QuizShallow): Promise<Quiz> => {
-      return Promise.all(quizShallow.questionsAndAnswers.map((questionAndAnswerIds: QuestionAndAnswerIds): Promise<QuestionAndAnswer> => 
-        Promise.all([
-          <Promise<Question>>this._questionsService.getQuestionById(questionAndAnswerIds.questionId),
-          <Promise<Answer>>this._answersService.getAnswerById(questionAndAnswerIds.answerId)
-        ])
-        .then((questionAndAnswerArray: [Question, Answer]): QuestionAndAnswer => (
-          {question: questionAndAnswerArray[0], answer: questionAndAnswerArray[1]}
-        ))
-      ))          
-      .then((questionsAndAnswers: QuestionAndAnswer[]): Quiz => {
-        delete quizShallow.questionsAndAnswers
-        const quiz: Quiz = Object.assign({questionsAndAnswers: questionsAndAnswers}, <QuizShallow>quizShallow)
-        return quiz;
-      })
-    }))
-  }
-
-
-
-  generateQuiz(): Promise<Quiz>{
-    const quizPromise: Promise<Quiz> = new Promise((resolve, reject) => {
-
-      const subscription = this._questionsService.questions$.subscribe(
-        async (questions: Question[]) => {
-          subscription.unsubscribe()
-          const ratedQuestions: QuestionWithRating[] = await this.rateQuestions(questions)
-          console.log('ratedQuestions :', ratedQuestions);
-          const randomQuestions: Question[] = this.getTenRandomQuestions(ratedQuestions)
-          console.log('randomQuestions :', randomQuestions);
-
-          const quizQuestions: QuestionAndAnswer[] = randomQuestions.map((question: Question) => {
-            return {
-              question: question,
-              answer: undefined
-            }
+          Promise.all(quizPromises).then((quizzes: Quiz[]) => {
+            subscriber.next(quizzes)
           })
+        })
 
-          const quiz: Quiz = {
-            id: null,
-            userId: null,
-            questionsAndAnswers: quizQuestions,
-            dateCompleted: null,
-          }
+      }
+    ))
+  }
 
-          resolve(quiz);
+  get quizzesFlat$(): Observable<QuizFlat[]> {
+    return this._dataService.getCollectionData(CollectionNames.Quizzes).pipe(switchMap(
+      (quizzesSnapshots: QueryDocumentSnapshot<QuizFlat>[]) => {
+        return Promise.all(
+          quizzesSnapshots.map(
+            (quizSnapshot: QueryDocumentSnapshot<QuizFlat>) => {
+              const quizFlat: QuizFlat = quizSnapshot.data()
+              return quizFlat
+            }
+          )
+        )
+      }
+    ))
+  }
+
+  add(quiz: Quiz): Promise<string> {
+    quiz.dateCompleted = new Date
+    const flatQuiz: QuizFlat = this.convertToFlatQuiz(quiz)
+    return this._dataService.addToCollection(CollectionNames.Quizzes, flatQuiz)
+  }
+
+  update(quiz: Quiz) {
+    const flatQuiz: QuizFlat = this.convertToFlatQuiz(quiz)
+    return this._dataService.updateInCollection(CollectionNames.Quizzes, quiz.id, flatQuiz)
+      .then(() => console.log('quiz updated'))
+  }
+
+  delete(quiz: Quiz): Promise<void> {
+    return this._dataService.deleteFromCollection(CollectionNames.Quizzes, quiz.id)
+  }
+
+
+
+  convertToNormalQuiz(quiz: QuizFlat, id): Promise<Quiz> {
+    return Promise.all(
+      quiz.questionsAndAnswersIds.map(
+        (questionAndAnswerIds: QuestionAndAnswerIds): Promise<QuestionAndAnswer> => {
+          return Promise.all([
+            this._questionService.getQuestionById(questionAndAnswerIds.questionId),
+            this._answerService.getAnswerById(questionAndAnswerIds.answerId)
+          ]).then((x: [Question, Answer]) => (<QuestionAndAnswer>{ question: x[0], answer: x[1] }))
+        }
+      )
+    )
+      .then((questionAndAnswers: QuestionAndAnswer[]) => {
+        const normalQuiz: Quiz = {
+          id: id,
+          questionsAndAnswers: questionAndAnswers,
+          dateCompleted: quiz.dateCompleted.toDate()
+        }
+        return normalQuiz
+      })
+  }
+
+  convertToFlatQuiz(quiz: Quiz): QuizFlat {
+    const questionsAndAnswersIds = quiz.questionsAndAnswers.map(
+      (questionAndAnswer: QuestionAndAnswer): QuestionAndAnswerIds => {
+        return {
+          questionId: questionAndAnswer.question.id,
+          answerId: questionAndAnswer.answer.id
+        }
+      }
+    )
+    const flatQuiz: QuizFlat = {
+      questionsAndAnswersIds: questionsAndAnswersIds,
+      dateCompleted: quiz.dateCompleted,
+    }
+    return flatQuiz
+  }
+
+  generateQuiz(): Promise<Quiz> {
+    return this.decideQuizQuestions().then(
+      (questionsAndAnswers: QuestionAndAnswer[]) => {
+        const quiz: Quiz = {
+          id: null,
+          dateCompleted: null,
+          questionsAndAnswers: questionsAndAnswers
+        }
+        return quiz
+      }
+    )
+  }
+
+  decideQuizQuestions(): Promise<QuestionAndAnswer[]> {
+    return new Promise((resolve, reject) => {
+      const subscription = this._questionService.questions$.subscribe(
+        (questions: Question[]) => {
+          subscription.unsubscribe()
+          this.rateQuestions(questions).then(
+            (ratedQuestions: QuestionWithRating[]) => {
+              const randomQuestions: Question[] = this.getTenRandomQuestions(ratedQuestions)
+              const quizQuestions: QuestionAndAnswer[] = randomQuestions.map((question: Question) => {
+                return {
+                  question: question,
+                  answer: undefined
+                }
+              })
+              resolve(quizQuestions);
+            }
+          )
         }
       )
     })
-
-    return quizPromise;
   }
-  
 
-  private getTenRandomQuestions(ratedQuestions: QuestionWithRating[]){
-    const questions: Question[] = 
-    ratedQuestions
-    .map((question: QuestionWithRating) => {
-      let ques = Object.assign(question)
-      ques.selectionRandomValue = Math.floor(Math.random() * ques.rating)
-      console.log(`question: ${question.value}, randomValue: ${ques.selectionRandomValue}`);
-      return ques
-    })
-    .sort((a, b) => a.selectionRandomValue - b.selectionRandomValue)
-    .slice(0, this.questionsInQuiz)
-    .map((question: QuestionWithRating) => {
-      delete question.rating;
-      return question;
-    })
-    
+  private getTenRandomQuestions(ratedQuestions: QuestionWithRating[]) {
+    const questions: Question[] =
+      ratedQuestions
+        .map((question: QuestionWithRating) => {
+          let ques = Object.assign(question)
+          ques.selectionRandomValue = Math.floor(Math.random() * ques.rating)
+          console.log(`question: ${question.value}, randomValue: ${ques.selectionRandomValue}`);
+          return ques
+        })
+        .sort((a, b) => a.selectionRandomValue - b.selectionRandomValue)
+        .slice(0, this.questionsInQuiz)
+        .map((question: QuestionWithRating) => {
+          delete question.rating;
+          return question;
+        })
+
     return questions;
   }
 
+  private rateQuestions(questions: Question[]) {
 
-  saveQuizResults(quiz: Quiz): Promise<any>{
-    return new Promise((resolve, reject) => {
-      const subscription = this._authService.user.subscribe((user: User) => {
-        subscription.unsubscribe()
-        const waitToSaveAnswers: Promise<{questionId: string, answerId: string}>[] = quiz.questionsAndAnswers
-        .map((questionAndAnswer: QuestionAndAnswer) => {
-          questionAndAnswer.answer.userId = user.uid
-          return this._answersService.saveAnswer(questionAndAnswer.answer)
-          .then(answerId => {
-            return {
-              questionId: questionAndAnswer.question.id,
-              answerId: answerId
-            }
-          })
-        })
-        console.log('waitToSaveAnswers :', waitToSaveAnswers);
-    
-        Promise.all(waitToSaveAnswers).then(
-          (questionsAndAnswersIds: []) => {
-            console.log('questionsAndAnswersIds :', questionsAndAnswersIds)
-            const quizToSave = {
-              userId: user.uid,
-              questionsAndAnswers: questionsAndAnswersIds,
-              dateCompleted: new Date()
-            }
-            return this._firestoreService.create('quizzes', quizToSave)
-            .then((quizSaveResponse: DocumentReference) => {
-              console.log('quizSaveResponse :', quizSaveResponse); 
-              quizSaveResponse.get()
-              .then((snapShot: DocumentSnapshot<any>) => {
-                const quizData = snapShot.data()
-                quizData.id = snapShot.id;
-                const quiz: QuizShallow = quizData;
-
-                resolve(quiz)
-              })
-            })
-          }
-        )
-      })
-    })
-  }
-
-
-  private rateQuestions(questions: Question[]){
-    
     return Promise.all(questions
       .map(async (question: Question) => {
         let rating;
         let questionWithRating: QuestionWithRating;
 
-        let {timesAnswered, timesAnsweredCorrectly} = await this.numberOfTimesAnswered(question.id)
-        
-        if(timesAnswered === 0){
+        const timesQuestionAnswered: TimesQuestionAnswered = await this.getTimesQuestionAnswered(question.id)
+        const { total, correctCount } = timesQuestionAnswered
+
+        if (total === 0) {
           rating = 2;
         } else {
-          const percentageCorrect = timesAnsweredCorrectly/timesAnswered*100;
-          rating = Math.floor(percentageCorrect/100*5)
+          const percentageCorrect = correctCount / total * 100;
+          rating = Math.floor(percentageCorrect / 100 * 5)
         }
-        console.log(`question: ${question.value} has been answered correctly ${timesAnsweredCorrectly} out of ${timesAnswered}. It has a selection rating of ${rating}`);
+        console.log(`question: ${question.value} has been answered correctly ${correctCount} out of ${total}. It has a selection rating of ${rating}`);
 
-        questionWithRating = Object.assign({rating: rating}, question)
+        questionWithRating = Object.assign({ rating: rating }, question)
 
         return questionWithRating
       })
     )
   }
 
-  numberOfTimesAnswered(questionId): Promise<{timesAnswered: number, timesAnsweredCorrectly: number}>{
+  getTimesQuestionAnswered(questionId): Promise<TimesQuestionAnswered> {
     return new Promise((resolve, reject) => {
 
-      const subscription = this.quizzesShallow$.subscribe((quizzes: QuizShallow[]) => {
+      const subscription = this.quizzesFlat$.subscribe((quizzes: QuizFlat[]) => {
         subscription.unsubscribe();
 
-        const quizzesWithQuestion: QuizShallow[] = quizzes.filter((quiz: QuizShallow) => {
-         const questionFoundInQuiz = quiz.questionsAndAnswers
-         .find((questionAndAnswerIds: QuestionAndAnswerIds) => questionAndAnswerIds.questionId === questionId)
-         return !!questionFoundInQuiz
-        })
+        const { timesQuestionAnswered, getAnswerPromises } = quizzes.reduce(
+          (x, quiz: QuizFlat) => {
+            quiz.questionsAndAnswersIds.forEach((qaid: QuestionAndAnswerIds) => {
+              if (qaid.questionId == questionId) {
+                x.timesQuestionAnswered.total++
+                x.getAnswerPromises.push(this._answerService.getAnswerById(qaid.answerId))
+              }
+            })
+            return x;
+          }, { timesQuestionAnswered: { total: 0, correctCount: 0 }, getAnswerPromises: [] }
+        )
 
-        Promise.all(quizzesWithQuestion.map((quiz: QuizShallow): Promise<Answer> => (
-          this._answersService.getAnswerById(quiz.questionsAndAnswers[0].answerId)
-        ))).then((answers: Answer[]) => {
-          const timesAnsweredObj = answers.reduce((timesAnsweredObj: TimesAnswered, answer: Answer) => {
-            timesAnsweredObj.timesAnswered++
-            timesAnsweredObj.timesAnsweredCorrectly = timesAnsweredObj.timesAnsweredCorrectly + (answer.markedAs ? 1 : 0)
-            return timesAnsweredObj
-          }, <TimesAnswered>{timesAnswered: 0, timesAnsweredCorrectly: 0})
+        Promise.all(<Promise<Answer>[]>getAnswerPromises)
+          .then((answers: Answer[]) => {
+            timesQuestionAnswered.correctCount = answers.reduce((count, answer: Answer) => {
+              answer.correct == true ? count++ : null
+              return count
+            }, 0)
+            resolve(timesQuestionAnswered)
+          })
 
-          resolve(timesAnsweredObj)
-        })
       })
-
     })
   }
 
+  saveQuizResults(quiz: Quiz): Promise<Quiz> {
+    return this.saveAnswers(quiz)
+      .then((quiz: Quiz) => {
+        quiz.dateCompleted = new Date
+        return this.add(quiz)
+      })
+      .then(quizId => {
+        quiz.id = quizId
+        return quiz
+      })
+  }
+
+  saveAnswers(quiz: Quiz): Promise<Quiz> {
+    return Promise.all(quiz.questionsAndAnswers.map(
+      (questionAndAnswer: QuestionAndAnswer): Promise<QuestionAndAnswer> => {
+        return this._answerService.add(questionAndAnswer.answer)
+          .then((answerId: string): QuestionAndAnswer => {
+            questionAndAnswer.answer.id = answerId
+            return questionAndAnswer
+          })
+      }
+    )).then((questionsAndAnswers: QuestionAndAnswer[]): Quiz => {
+      quiz.questionsAndAnswers = questionsAndAnswers
+      return quiz
+    })
+  }
 
 }

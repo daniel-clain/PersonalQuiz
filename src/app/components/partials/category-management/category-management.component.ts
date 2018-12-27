@@ -1,11 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import { User } from 'firebase';
-import { map } from 'rxjs/operators';
-import { CategoryService } from 'src/app/services/category/category.service';
+import { map, switchMap } from 'rxjs/operators';
 import { FormGroup, FormControl } from '@angular/forms';
 import { Category } from 'src/app/models/category';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { QueryDocumentSnapshot, AngularFirestore, DocumentData } from 'angularfire2/firestore';
+import { AngularFireAuth } from 'angularfire2/auth';
+import { DataService } from 'src/app/services/data/data.service';
+import { CategoryService } from 'src/app/services/category/category.service';
 
 @Component({
   selector: 'app-category-management',
@@ -20,44 +23,31 @@ export class CategoryManagementComponent implements OnInit {
     value: new FormControl(''),
   });
 
-  constructor(private _authService: AuthService, private _categoryService: CategoryService) { }
+  constructor(private _afa: AngularFireAuth, private _afs: AngularFirestore, private _authService: AuthService, private _dataService: DataService, private _categoryService: CategoryService) { }
 
   ngOnInit() {    
-    this.categories$ = this._categoryService.categories$;
+    this.categories$ = this._categoryService.categories$
   }
 
   submitNewCategory(){
-    const subscription = this._authService.user
-    .pipe(map((user: User) => user.uid)).subscribe(
-
-      (userId: string) => {
-        const newCategory: Category =
-        Object.assign(this.newCategoryForm.value, {
-          userId: userId
-        })
-
-        this._categoryService.addNewCategory(newCategory)
-        .then(() => this.newCategoryForm.reset())
-
-        subscription.unsubscribe()
-      }
-    )  
+    const category: Category = this.newCategoryForm.value
+    this._categoryService.add(category).then(() => console.log('new category saved'))
+    
+  }
+  submitUpdatedCategory(){
+    
+    this._categoryService.update(this.selectedCategory).then(() => console.log('new category saved'))
   }
 
-  submitUpdateCategory(){
-    console.log('this.selectedCategory :', this.selectedCategory);
-    this._categoryService.updateCategory(this.selectedCategory).then(() => console.log('category updated'))
-  }
-
-  selectCategory(category: Category){
+  selectCategory(category){
     this.selectedCategory = Object.assign({}, category);
   }
 
-  deleteCategory(categoryId){
-    const deleteConfirmed: boolean = window.confirm(`Are you sure you want to delete category: \n\n "${this.selectedCategory.value}`)
+  deleteCategory(){
+    const deleteConfirmed: boolean = window.confirm(`Are you sure you want to delete category: \n\n ${this.selectedCategory.value}`)
 
     if(deleteConfirmed){
-      this._categoryService.deleteCategory(categoryId).then(() => console.log("Document successfully deleted!"))
+      this._categoryService.delete(this.selectedCategory).then(() => console.log('category deleted'))
     }
   }
 

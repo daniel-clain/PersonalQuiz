@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
-import { QuestionsService } from 'src/app/services/questions/questions.service';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { AuthService } from 'src/app/services/auth/auth.service';
 import { FormGroup, FormControl } from '@angular/forms';
-import { Question } from 'src/app/models/question';
-import { User } from 'firebase';
-import { map } from 'rxjs/operators';
+import { Question, QuestionFlat } from 'src/app/models/question';
+import { switchMap, map } from 'rxjs/operators';
+import { Category, CategoryFlat } from 'src/app/models/category';
+import { AngularFirestore, QueryDocumentSnapshot, DocumentData, DocumentSnapshot } from 'angularfire2/firestore';
+import { AngularFireAuth } from 'angularfire2/auth';
+import { DataService } from 'src/app/services/data/data.service';
+import { QuestionService } from 'src/app/services/question/question.service';
 import { CategoryService } from 'src/app/services/category/category.service';
-import { Category } from 'src/app/models/category';
 
 
 @Component({
@@ -16,90 +18,67 @@ import { Category } from 'src/app/models/category';
 })
 export class QuestionManagementComponent implements OnInit {
 
-  selectedQuestion: Question;
   questions$: Observable<Question[]>
-  selectedSubsection: string;
-  categories: Category[];
-  
+  categories$: Observable<Category[]>
+
   newQuestionForm = new FormGroup({
     value: new FormControl(''),
     correctAnswer: new FormControl(''),
     category: new FormControl('')
   });
 
-  constructor(private _questionService: QuestionsService, private _authService: AuthService, private _categoryService: CategoryService) {}
+  selectedSubsection: string;
+  selectedQuestion: Question;
+
+
+  constructor(private _authService: AuthService, private _afs: AngularFirestore, private _afa: AngularFireAuth, private _dataService: DataService, private _questionService: QuestionService, private _categoryService: CategoryService) { }
 
 
   ngOnInit() {
+    this.questions$ = this._questionService.questions$;
 
-    this.questions$ = this._questionService.questions$
-
-    this._categoryService.categories$.subscribe((categories: Category[]) => {
-      this.categories = categories
-    })
-
+    this.categories$ = this._categoryService.categories$
 
 
   }
-
-
-  loginWithPopup(){
-    this._authService.loginWithPopup()
+  compareCategorySelect(selectCategory: Category, questionCategory: Category) {
+    return selectCategory && questionCategory && selectCategory.id === questionCategory.id
   }
 
-  submitNewQuestion(){
-    const subscription = this._authService.user
-    .pipe(map((user: User) => user.uid)).subscribe(
 
-      (userId: string) => {
-        const newQuestion: Question =
-        Object.assign(this.newQuestionForm.value, {
-          userId: userId,
-          dateUpdated: new Date()
-        })
+  submitNewQuestion() {
+    const {value, category, correctAnswer} = this.newQuestionForm.value
+    const question: Question = {
+      id: null,
+      value: value,
+      category: category,
+      correctAnswer: correctAnswer,
+      dateUpdated: new Date,
+    }
+    this._questionService.add(question).then(() => console.log('new question saved'))
 
-        this._questionService.addNewQuestion(newQuestion)
-        .then(() => this.newQuestionForm.reset())
-
-        subscription.unsubscribe()
-      }
-    )    
   }
-  submitUpdatedQuestion(){
-    const subscription = this.questions$.subscribe(
-      (questions: Question[]) => {
-        const questionToUpdate = questions.find(question => question.id === this.selectedQuestion.id);
-        
-        questionToUpdate.value = this.selectedQuestion.value
-        questionToUpdate.category = this.selectedQuestion.category
-        questionToUpdate.correctAnswer = this.selectedQuestion.correctAnswer
-        questionToUpdate.dateUpdated = new Date()
-
-        this._questionService.updateQuestion(questionToUpdate)
-        subscription.unsubscribe()
-      }
-    )
+  submitUpdatedQuestion() {
+    this.selectedQuestion.dateUpdated = new Date
+    this._questionService.update(this.selectedQuestion).then(() => console.log('question has been saved'))
   }
 
-  selectQuestion(question){
-    this.selectedQuestion = Object.assign({}, question);
-  }
+  deleteQuestion() {
+    const deleteConfirmed: boolean = window.confirm(
+      `Are you sure you want to delete question: \n\n ${this.selectedQuestion.value}`)
 
-  deleteQueston(questionId){
-
-    const deleteConfirmed: boolean = window.confirm(`Are you sure you want to delete question: \n\n "${this.selectedQuestion.value}`)
-
-    if(deleteConfirmed){
-      this._questionService.deleteQuestion(questionId)
-      .then(function() {
-        console.log("Document successfully deleted!");
-      }).catch(function(error) {
-        console.error("Error removing document: ", error);
-      });
+    if (deleteConfirmed) {
+      this._questionService.delete(this.selectedQuestion).then(() => console.log('question deleted'))
     }
   }
 
-  setSubsection(subsection){
+  selectQuestion(question) {
+    this.selectedQuestion = Object.assign({}, question);
+  }
+
+  
+
+  setSubsection(subsection) {
     this.selectedSubsection = subsection
   }
 

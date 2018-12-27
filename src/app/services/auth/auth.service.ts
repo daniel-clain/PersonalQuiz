@@ -6,6 +6,7 @@ import { map } from 'rxjs/operators'
 import { User } from 'firebase';
 import { Router } from '@angular/router';
 import { Question } from 'src/app/models/question';
+import { resolve } from 'bluebird';
 
 @Injectable({
   providedIn: 'root'
@@ -25,6 +26,20 @@ export class AuthService {
       return isUserLoggedIn;
     }))
 
+  }
+
+  getUser(): Promise<User>{
+    return new Promise((resolve, reject) => {
+      const subscription = this._angularFireAuth.user.subscribe(
+        (user: User) => {
+          subscription.unsubscribe()
+          if(user)
+            resolve(user)
+          else
+            reject('user not authenticated')
+        }
+      )
+    })
   }
 
   loginWithPopup(){

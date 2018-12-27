@@ -1,6 +1,10 @@
 export interface Answer{
     id: string;
-    userId: string;
     value: string;
-    markedAs: boolean;
+    correct: boolean;
+}
+
+export interface AnswerFlat{
+    value: string;
+    correct: boolean;
 }

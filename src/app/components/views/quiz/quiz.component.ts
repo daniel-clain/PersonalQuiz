@@ -5,8 +5,8 @@ import { FormGroup, FormControl } from '@angular/forms';
 import { Answer } from 'src/app/models/answer';
 import { Observable } from 'rxjs';
 import { Question } from 'src/app/models/question';
-import { CategoryService } from 'src/app/services/category/category.service';
 import { Category } from 'src/app/models/category';
+import { CategoryService } from 'src/app/services/category/category.service';
 
 @Component({
   selector: 'app-quiz',
@@ -23,25 +23,23 @@ export class QuizComponent implements OnInit {
   selectedQuestion: Question;
   selectedSubsection: string;
   questionsInQuiz: number;
-  categories: Category[]
+  categories$: Observable<Category[]>
 
   quizzes$: Observable<Quiz[]>
 
   questionAnswerForm = new FormGroup({
     value: new FormControl('')
   });
+  
 
   constructor(private _quizService: QuizService, private _categoryService: CategoryService) {
-    this.questionsInQuiz = this._quizService.questionsInQuiz    
-    this._categoryService.categories$.subscribe((categories: Category[]) => {
-      this.categories = categories
-    })
   }
 
-  async ngOnInit(){
+  ngOnInit(){
     this.quizzes$ = this._quizService.quizzes$
-    this.quiz = await this._quizService.generateQuiz();
-    this.questionNumber = 1;
+    this.categories$ = this._categoryService.categories$
+    this.questionsInQuiz = this._quizService.questionsInQuiz
+    this.startNewQuiz()
   }
 
   startNewQuiz(){
@@ -56,10 +54,11 @@ export class QuizComponent implements OnInit {
   
   
   submitAnswer(){
-    const answer: Answer =
-    Object.assign(this.questionAnswerForm.value, {
-      markedAs: undefined
-    })
+    const answer: Answer = {
+      id: undefined,
+      value: this.questionAnswerForm.value.value,
+      correct: undefined,
+    }
     const question: QuestionAndAnswer = this.quiz.questionsAndAnswers[this.questionNumber - 1]
     question.answer = answer;
   }
@@ -67,7 +66,7 @@ export class QuizComponent implements OnInit {
   markAnswer(answerMarking){
     const {answer}: QuestionAndAnswer = 
       this.quiz.questionsAndAnswers[this.questionNumber - 1];
-    answer.markedAs = (answerMarking === 'correct' ? true : false);
+    answer.correct = (answerMarking === 'correct' ? true : false);
   }
 
   nextQuestion(){
@@ -99,7 +98,7 @@ export class QuizComponent implements OnInit {
   getQuizMark(questionsAndAnswers: QuestionAndAnswer[]){
     let quizMark: number;
     quizMark = questionsAndAnswers.reduce((mark: number, questionAndAnswer: QuestionAndAnswer) => {
-      if(questionAndAnswer.answer.markedAs) mark++
+      if(questionAndAnswer.answer.correct) mark++
       return mark
     }, 0)
     return quizMark
@@ -108,6 +107,10 @@ export class QuizComponent implements OnInit {
   
   setSubsection(subsection){
     this.selectedSubsection = subsection
+  }
+
+  compareCategorySelect(selectCategory: Category, questionCategory: Category) {
+    return selectCategory && questionCategory && selectCategory.id === questionCategory.id
   }
 
 
