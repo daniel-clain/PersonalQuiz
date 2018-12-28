@@ -55,7 +55,10 @@ export class QuestionManagementComponent implements OnInit {
       correctAnswer: correctAnswer,
       dateUpdated: new Date,
     }
-    this._questionService.add(question).then(() => console.log('new question saved'))
+    this._questionService.add(question).then(() => {
+      console.log('new question saved')
+      this.newQuestionForm.reset()
+    })
 
   }
   submitUpdatedQuestion() {

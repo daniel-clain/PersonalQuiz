@@ -25,7 +25,10 @@ export class CategoryManagementComponent implements OnInit {
 
   submitNewCategory(){
     const category: Category = this.newCategoryForm.value
-    this._categoryService.add(category).then(() => console.log('new category saved'))
+    this._categoryService.add(category).then(() => {
+      console.log('new category saved')
+      this.newCategoryForm.reset()
+    })
     
   }
   submitUpdatedCategory(){

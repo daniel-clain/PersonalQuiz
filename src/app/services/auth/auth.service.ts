@@ -5,68 +5,33 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators'
 import { User } from 'firebase';
 import { Router } from '@angular/router';
-import { Question } from 'src/app/models/question';
-import { resolve } from 'bluebird';
-
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
 
-  private _userStream$: Observable<User>;
-  public isLoggedInStream$: Observable<boolean>;
+  constructor(private _afa: AngularFireAuth, private _router: Router) {}
 
-  constructor(private _angularFireAuth: AngularFireAuth, private _router: Router) { 
-  
-    this._userStream$ = this._angularFireAuth.user;
-
-
-    this.isLoggedInStream$ = this._angularFireAuth.authState.pipe(map((userEvent: User) => {
-      const isUserLoggedIn: boolean = (userEvent === null) ? false : true;
-      return isUserLoggedIn;
-    }))
-
+  get user$(): Observable<User>{
+    return this._afa.user;
   }
 
-  getUser(): Promise<User>{
-    return new Promise((resolve, reject) => {
-      const subscription = this._angularFireAuth.user.subscribe(
-        (user: User) => {
-          subscription.unsubscribe()
-          if(user)
-            resolve(user)
-          else
-            reject('user not authenticated')
-        }
-      )
-    })
+  get isLoggedInStream$(): Observable<boolean>{
+    return this.user$.pipe(map((userEvent: User) => userEvent !== null))
   }
 
   loginWithPopup(){
-    this._angularFireAuth.auth.signInWithPopup(new auth.FacebookAuthProvider())
-  }
-
-  loginUser(email: string, password: string){
-    this._angularFireAuth.auth.signInWithEmailAndPassword(email, password)
-    .then(() => this._router.navigate(['']))
+    this._afa.auth.signInWithPopup(new auth.FacebookAuthProvider())
     .catch(error => console.log('Login failed :', error.message))
-  }
 
-  signupUser(email: string, password: string){
-    this._angularFireAuth.auth.createUserWithEmailAndPassword(email, password)  
-    .catch(error => console.log('Signup failed :', error.message)) 
   }
 
   logout(){
-    this._angularFireAuth.auth.signOut()
+    this._afa.auth.signOut()
     .then(() => {
-      this._router.navigate([''])
-    })
-    
+      this._router.navigate(['/login'])
+    })    
   }
   
 
-  get user(): Observable<User>{
-    return this._userStream$;
-  }
 }

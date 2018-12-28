@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, of, Subscriber } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { AngularFirestore, DocumentData, AngularFirestoreCollection, DocumentReference, DocumentChangeAction, DocumentSnapshot } from 'angularfire2/firestore';
 import { AngularFireAuth } from 'angularfire2/auth';
@@ -12,7 +12,7 @@ import { CollectionNames } from 'src/app/models/collection-enum';
 })
 export class DataService {
 
-  constructor(private _authService: AuthService, private _afs: AngularFirestore, private _afa: AngularFireAuth, private _dataService: DataService) { }
+  constructor(private _afs: AngularFirestore, private _authService: AuthService) { }
 
   getCollectionData(collectionName: CollectionNames): Observable<any[]> {
     return this.getCollection(collectionName).pipe(switchMap(
@@ -29,13 +29,18 @@ export class DataService {
   }
 
   getCollection(collectionName: CollectionNames): Observable<AngularFirestoreCollection> {
-    return this._afa.user.pipe(switchMap(
-      (user: User) => {
-        const collectionNameString: string = CollectionNames[collectionName]
-        return of(this._afs.collection('Users').doc(user.uid)
-          .collection(collectionNameString))
-      }
-    ))
+    return new Observable((subscriber: Subscriber<AngularFirestoreCollection>) => {
+      const subscription = this._authService.user$.subscribe(
+        (user: User) => {
+          subscription.unsubscribe()
+          if(user){
+            const collectionNameString: string = CollectionNames[collectionName]
+            subscriber.next(this._afs.collection('Users').doc(user.uid)
+              .collection(collectionNameString))
+          }
+        }
+      )
+    })
   }
 
 

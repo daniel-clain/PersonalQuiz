@@ -1,4 +1,5 @@
-<button routerLink="/quiz" routerLinkActive="active">Start Quiz</button>
-<button routerLink="/question-management" routerLinkActive="active">Add Question</button>
-
-<button *ngIf="isLoggedIn$ | async" (click)="logoutHandler()">Logout</button>
+<nav *ngIf="isLoggedIn$ | async">
+    <button routerLink="/quiz" routerLinkActive="active">Start Quiz</button>
+    <button routerLink="/question-management" routerLinkActive="active">Add Question</button>
+    <button (click)="logoutHandler()">Logout</button>
+</nav>
