@@ -27,7 +27,7 @@ interface TimesQuestionAnswered {
 })
 export class QuizService {
 
-  questionsInQuiz = 2;
+  questionsInQuiz = 5;
   quizzes: Quiz[] = [];
 
   constructor(private _dataService: DataService, private _questionService: QuestionService, private _answerService: AnswerService) { }
