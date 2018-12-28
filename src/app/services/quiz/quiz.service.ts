@@ -4,15 +4,13 @@ import { Question } from 'src/app/models/question';
 import { Answer } from 'src/app/models/answer';
 import { DocumentSnapshot, QueryDocumentSnapshot } from 'angularfire2/firestore';
 import { Observable } from 'rxjs';
-import { AuthService } from '../auth/auth.service';
 import { AnswerService } from '../answer/answer.service';
 import { switchMap } from 'rxjs/operators';
 import { DataService } from '../data/data.service';
 import { QuestionService } from '../question/question.service';
 import { Category } from 'src/app/models/category';
 import { CollectionNames } from 'src/app/models/collection-enum';
-
-interface QuestionWithRating extends Question {
+export interface QuestionWithRating extends Question {
   id: string;
   category: Category;
   value: string;
@@ -20,12 +18,10 @@ interface QuestionWithRating extends Question {
   dateUpdated: Date;
   rating: 1 | 2 | 3 | 4 | 5;
 }
-
 interface TimesQuestionAnswered {
   total: number;
   correctCount: number;
 }
-
 @Injectable({
   providedIn: 'root'
 })
@@ -34,8 +30,7 @@ export class QuizService {
   questionsInQuiz = 2;
   quizzes: Quiz[] = [];
 
-  constructor(private _authService: AuthService, private _dataService: DataService, private _questionService: QuestionService, private _answerService: AnswerService) { }
-
+  constructor(private _dataService: DataService, private _questionService: QuestionService, private _answerService: AnswerService) { }
 
   get quizzes$(): Observable<Quiz[]> {
     return this._dataService.getCollectionData(CollectionNames.Quizzes).pipe(switchMap(
@@ -87,8 +82,6 @@ export class QuizService {
   delete(quiz: Quiz): Promise<void> {
     return this._dataService.deleteFromCollection(CollectionNames.Quizzes, quiz.id)
   }
-
-
 
   convertToNormalQuiz(quiz: QuizFlat, id): Promise<Quiz> {
     return Promise.all(
@@ -147,7 +140,7 @@ export class QuizService {
           subscription.unsubscribe()
           this.rateQuestions(questions).then(
             (ratedQuestions: QuestionWithRating[]) => {
-              const randomQuestions: Question[] = this.getTenRandomQuestions(ratedQuestions)
+              const randomQuestions: Question[] = this.getRandomQuestions(ratedQuestions)
               const quizQuestions: QuestionAndAnswer[] = randomQuestions.map((question: Question) => {
                 return {
                   question: question,
@@ -162,7 +155,7 @@ export class QuizService {
     })
   }
 
-  private getTenRandomQuestions(ratedQuestions: QuestionWithRating[]) {
+  getRandomQuestions(ratedQuestions: QuestionWithRating[]): Question[] {
     const questions: Question[] =
       ratedQuestions
         .map((question: QuestionWithRating) => {
@@ -175,13 +168,13 @@ export class QuizService {
         .slice(0, this.questionsInQuiz)
         .map((question: QuestionWithRating) => {
           delete question.rating;
-          return question;
+          return <Question>question;
         })
 
     return questions;
   }
 
-  private rateQuestions(questions: Question[]) {
+  rateQuestions(questions: Question[]) {
 
     return Promise.all(questions
       .map(async (question: Question) => {
@@ -208,10 +201,8 @@ export class QuizService {
 
   getTimesQuestionAnswered(questionId): Promise<TimesQuestionAnswered> {
     return new Promise((resolve, reject) => {
-
       const subscription = this.quizzesFlat$.subscribe((quizzes: QuizFlat[]) => {
         subscription.unsubscribe();
-
         const { timesQuestionAnswered, getAnswerPromises } = quizzes.reduce(
           (x, quiz: QuizFlat) => {
             quiz.questionsAndAnswersIds.forEach((qaid: QuestionAndAnswerIds) => {
@@ -223,7 +214,6 @@ export class QuizService {
             return x;
           }, { timesQuestionAnswered: { total: 0, correctCount: 0 }, getAnswerPromises: [] }
         )
-
         Promise.all(<Promise<Answer>[]>getAnswerPromises)
           .then((answers: Answer[]) => {
             timesQuestionAnswered.correctCount = answers.reduce((count, answer: Answer) => {
@@ -232,7 +222,6 @@ export class QuizService {
             }, 0)
             resolve(timesQuestionAnswered)
           })
-
       })
     })
   }
