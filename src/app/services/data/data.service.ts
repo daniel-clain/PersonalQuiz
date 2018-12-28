@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, Subscriber } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
-import { AngularFirestore, DocumentData, AngularFirestoreCollection, DocumentReference, DocumentChangeAction, DocumentSnapshot } from 'angularfire2/firestore';
-import { AngularFireAuth } from 'angularfire2/auth';
+import { AngularFirestore, AngularFirestoreCollection } from 'angularfire2/firestore';
 import { switchMap, map } from 'rxjs/operators';
-import { User } from 'firebase';
+import { User } from 'firebase/auth';
 import { CollectionNames } from 'src/app/models/collection-enum';
 
 @Injectable({
