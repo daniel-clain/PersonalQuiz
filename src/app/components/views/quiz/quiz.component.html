@@ -1,7 +1,25 @@
 
-<div *ngIf="quiz && !showQuizResults">
+<div *ngIf="!quizActive && notEnoughQuestions">
+    <p>
+        ! You currently dont have enough questions to run a quiz, you need at least {{questionsInQuiz}}. Add more questions and try again.
+    </p>
+</div>
+
+<div *ngIf="!quizActive">    
+    <div class="field">
+        <span class="field__name">Select tags to for quiz: </span>
+        <div class="field__checkboxes field__checkboxes">
+            <label *ngFor="let tag of tags$ | async">
+                <input type="checkbox" [checked]="doesQuizHaveTag(newQuiz, tag)" (click)="toggleQuizTag(newQuiz, tag)"> {{tag.value}}
+            </label>
+        </div>
+    </div>   
+    <button (click)="startQuiz()">Start Quiz</button>
+</div>
+
+<div *ngIf="quizActive">
     <h3>Question {{questionNumber}} of {{questionsInQuiz}}</h3>
-    <div class="quiz-question">{{quiz.questionsAndAnswers[questionNumber-1].question.value}}</div>
+    <div class="quiz-question">{{newQuiz.questionsAndAnswers[questionNumber-1].question.value}}</div>
 
     <form [formGroup]="questionAnswerForm" (ngSubmit)="submitAnswer()">
         <div class="field">
@@ -9,15 +27,15 @@
             <textarea 
                 class="field__text-area field__input"  
                 formControlName="value" 
-                [readonly]="quiz.questionsAndAnswers[questionNumber-1].answer">
+                [readonly]="newQuiz.questionsAndAnswers[questionNumber-1].answer">
             </textarea>
         </div>
-        <button [disabled]="quiz.questionsAndAnswers[questionNumber-1].answer">Submit</button>
+        <button [disabled]="newQuiz.questionsAndAnswers[questionNumber-1].answer">Submit</button>
     </form>
 
-    <div *ngIf="quiz.questionsAndAnswers[questionNumber-1] &&  quiz.questionsAndAnswers[questionNumber-1].answer">
+    <div *ngIf="newQuiz.questionsAndAnswers[questionNumber-1] &&  newQuiz.questionsAndAnswers[questionNumber-1].answer">
         <h3>The Correct Answer Is:</h3>
-        <h3>{{quiz.questionsAndAnswers[questionNumber-1].question.correctAnswer}}</h3>
+        <h3>{{newQuiz.questionsAndAnswers[questionNumber-1].question.correctAnswer}}</h3>
         <div>
             Mark the answer correct or incorrect:<br>
             <button (click)="markAnswer('correct')">Correct</button>
@@ -26,14 +44,11 @@
     </div>
 
     <button 
-        *ngIf="quiz.questionsAndAnswers[questionNumber-1].answer && quiz.questionsAndAnswers[questionNumber-1].answer.correct !== undefined" 
-        (click)="questionNumber < quiz.questionsAndAnswers.length ? nextQuestion() : completeQuiz()">
-        {{questionNumber < quiz.questionsAndAnswers.length ? "Next" : "Complete"}}
+        *ngIf="newQuiz.questionsAndAnswers[questionNumber-1].answer && newQuiz.questionsAndAnswers[questionNumber-1].answer.correct !== undefined" 
+        (click)="questionNumber < newQuiz.questionsAndAnswers.length ? nextQuestion() : completeQuiz()">
+        {{questionNumber < newQuiz.questionsAndAnswers.length ? "Next" : "Complete"}}
     </button>
 
-</div>
-<div *ngIf="quiz && showQuizResults">
-    <button (click)="startNewQuiz()">Next Quiz?</button>
 </div>
 
 <hr>
@@ -51,6 +66,17 @@
         </div>
         <div class="list__item list__item--expanded" *ngIf="selectedQuiz && quiz.id === selectedQuiz.id">
             <hr>
+            
+            <h4>Quiz Tags</h4>
+            <div class="field">
+                <span class="field__name">Tags: </span>
+                <div class="field__checkboxes field__checkboxes--disabled">
+                    <label *ngFor="let tag of tags$ | async">
+                        <input type="checkbox" [checked]="doesQuizHaveTag(quiz, tag)" (click)="toggleQuizTag(quiz, tag)"  disabled="disabled"> {{tag.value}}
+                    </label>
+                </div>
+            </div> 
+
             <h4>Quiz Question And Answers</h4>
             <div class="question list">
                 <div *ngFor="let questionAndAnswer of quiz.questionsAndAnswers">
@@ -64,19 +90,17 @@
                             <input class="field__input" [(ngModel)]="questionAndAnswer.question.value" disabled="disabled">
                         </div>
                         <div class="field">
-                            <span class="field__name">Category: </span>
-                            <select class="field__input" [(ngModel)]="questionAndAnswer.question.category" disabled="disabled" [compareWith]="compareCategorySelect">
-                                <option 
-                                    *ngFor="let category of categories$ | async"
-                                    [ngValue]="category">
-                                    {{category.value}}
-                                </option>
-                            </select>
-                        </div>
-                        <div class="field">
                             <span class="field__name">Correct Answer: </span>
                             <textarea class="field__text-area field__input" disabled="disabled" [(ngModel)]="questionAndAnswer.question.correctAnswer"></textarea>
                         </div>
+                        <div class="field">
+                            <span class="field__name">Tags: </span>
+                            <div class="field__checkboxes field__checkboxes--disabled">
+                                <label *ngFor="let tag of tags$ | async">
+                                    <input type="checkbox" [checked]="doesQuestionHaveTag(questionAndAnswer.question, tag)" disabled="disabled"> {{tag.value}}
+                                </label>
+                            </div>
+                        </div>                        
                         <div class="field">
                             <span class="field__name">Your Answer: </span>
                             <textarea class="field__text-area field__input" disabled="disabled" [(ngModel)]="questionAndAnswer.answer.value"></textarea>

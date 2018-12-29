@@ -1,0 +1,32 @@
+
+<h3>Add Tag</h3>
+
+<form [formGroup]="newTagForm" (ngSubmit)="submitNewTag()">
+    <div class="field">
+        <span class="field__name">Tag Name: </span>
+        <input class="field__input" formControlName="value">
+    </div>
+    <button>Submit</button>
+</form>
+
+<hr>
+
+<h2>Tags List</h2>
+    <div *ngFor="let tag of tags$ | async">
+      <div class="list__item" (click)="selectTag(tag)" *ngIf="!selectedTag || tag.id !== selectedTag.id">
+          {{tag.value}}
+      </div>
+        <div class="list__item--expanded" *ngIf="selectedTag && tag.id === selectedTag.id">
+          <hr>
+          <h3>Edit Tag: {{tag.value}}</h3>
+          <div class="field">
+              <span class="field__name">Tag: </span>
+              <input class="field__input" [(ngModel)]="selectedTag.value">
+          </div>
+            
+          <button (click)="submitUpdatedTag()">Update</button>
+          <button type="button" (click)="selectTag(null)">Close</button>
+          <button (click)="deleteTag(tag.id)">Delete</button>
+          <hr>
+        </div>
+    </div>

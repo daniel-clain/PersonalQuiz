@@ -11,7 +11,7 @@ export class MainMenuComponent {
   isLoggedIn$: Observable<boolean>
 
   constructor(private _authService: AuthService) {
-    this.isLoggedIn$ = _authService.isLoggedInStream$
+    this.isLoggedIn$ = _authService.isUserAuthorised$
   }
   logoutHandler(){
     this._authService.logout()

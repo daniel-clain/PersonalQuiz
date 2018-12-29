@@ -24,7 +24,7 @@ export class AuthGuard implements CanActivate {
   }
 
   whenUserLogsInResumeNavigation(){
-    this._authService.isLoggedInStream$.subscribe((isUserLoggedIn: Boolean) => {
+    this._authService.isUserAuthorised$.subscribe((isUserLoggedIn: Boolean) => {
       if(isUserLoggedIn && this.lastNavigationAttemptedUrl){
         this._router.navigate([this.lastNavigationAttemptedUrl])
       }
@@ -32,12 +32,12 @@ export class AuthGuard implements CanActivate {
   }
 
   canActivate(): Observable<boolean> {
-    return this._authService.isLoggedInStream$.pipe(map((isLoggedInEvent: boolean) => {
-        if(isLoggedInEvent === false){
+    return this._authService.isUserAuthorised$.pipe(map((isUserAuthorised: boolean) => {
+        if(isUserAuthorised === false){
           console.log(`Redirected to login page because user is not authenticated`);
           this._router.navigate(['login'])
         }
-      return isLoggedInEvent;
+      return isUserAuthorised;
     }))
   }
 }

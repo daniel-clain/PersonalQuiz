@@ -5,8 +5,8 @@ import { FormGroup, FormControl } from '@angular/forms';
 import { Answer } from 'src/app/models/answer';
 import { Observable } from 'rxjs';
 import { Question } from 'src/app/models/question';
-import { Category } from 'src/app/models/category';
-import { CategoryService } from 'src/app/services/category/category.service';
+import { Tag } from 'src/app/models/tag';
+import { TagService } from 'src/app/services/tag/tag.service';
 
 @Component({
   selector: 'app-quiz',
@@ -15,41 +15,49 @@ import { CategoryService } from 'src/app/services/category/category.service';
 })
 export class QuizComponent implements OnInit {
 
-  quiz: Quiz;
   questionNumber: number;
   showCorrectAnswer = false;
   showQuizResults = false;
+  quizActive = false;
   selectedQuiz: Quiz;
   selectedQuestion: Question;
   selectedSubsection: string;
   questionsInQuiz: number;
-  categories$: Observable<Category[]>
-
+  tags$: Observable<Tag[]>
   quizzes$: Observable<Quiz[]>
+  notEnoughQuestions = false;
+
+  newQuiz: Quiz = {
+    id: null,
+    questionsAndAnswers: [],
+    dateCompleted: null,
+    tags: []
+  }
+
 
   questionAnswerForm = new FormGroup({
     value: new FormControl('')
   });
   
 
-  constructor(private _quizService: QuizService, private _categoryService: CategoryService) {
+  constructor(private _quizService: QuizService, private _tagService: TagService) {
   }
 
   ngOnInit(){
     this.quizzes$ = this._quizService.quizzes$
-    this.categories$ = this._categoryService.categories$
+    this.tags$ = this._tagService.tags$
     this.questionsInQuiz = this._quizService.questionsInQuiz
-    this.startNewQuiz()
   }
 
-  startNewQuiz(){
-    this.showQuizResults = false;
-    delete this.quiz;
-    delete this.questionNumber
-    this._quizService.generateQuiz().then((quiz: Quiz) => {
-      this.quiz = quiz;
+  startQuiz(){
+    this._quizService.generateQuizQuestions(this.newQuiz.tags)
+    .then((questionsAndAnswers: QuestionAndAnswer[]) => {
+      this.newQuiz.questionsAndAnswers = questionsAndAnswers;
+      this.notEnoughQuestions = false
       this.questionNumber = 1;
+      this.quizActive = true;
     })
+    .catch(() => this.notEnoughQuestions = true)
   }
   
   
@@ -59,13 +67,13 @@ export class QuizComponent implements OnInit {
       value: this.questionAnswerForm.value.value,
       correct: undefined,
     }
-    const question: QuestionAndAnswer = this.quiz.questionsAndAnswers[this.questionNumber - 1]
+    const question: QuestionAndAnswer = this.newQuiz.questionsAndAnswers[this.questionNumber - 1]
     question.answer = answer;
   }
 
   markAnswer(answerMarking){
     const {answer}: QuestionAndAnswer = 
-      this.quiz.questionsAndAnswers[this.questionNumber - 1];
+      this.newQuiz.questionsAndAnswers[this.questionNumber - 1];
     answer.correct = (answerMarking === 'correct' ? true : false);
   }
 
@@ -77,11 +85,18 @@ export class QuizComponent implements OnInit {
 
   completeQuiz(){
     this.questionAnswerForm.reset();
-    this._quizService.saveQuizResults(this.quiz)
+    this._quizService.saveQuizResults(this.newQuiz)
     .then((savedQuiz: Quiz) => {
-      this.showQuizResults = true;
       this.setSubsection('Quizzes List')
-      this.selectedQuiz = savedQuiz
+      this.selectedQuiz = savedQuiz      
+      delete this.questionNumber
+      this.quizActive = false;
+      this.newQuiz = {
+        id: null,
+        questionsAndAnswers: [],
+        dateCompleted: null,
+        tags: []
+      }
     })
   }
 
@@ -108,9 +123,21 @@ export class QuizComponent implements OnInit {
   setSubsection(subsection){
     this.selectedSubsection = subsection
   }
+  
+  doesQuestionHaveTag(question: Question, tag: Tag): boolean{
+    return !!question.tags.find((questionTag: Tag) => questionTag.id === tag.id)
+  }
 
-  compareCategorySelect(selectCategory: Category, questionCategory: Category) {
-    return selectCategory && questionCategory && selectCategory.id === questionCategory.id
+  doesQuizHaveTag(quiz: Quiz, tag: Tag): boolean{
+    return !!quiz.tags.find((quizTag: Tag) => quizTag.id === tag.id)
+  }
+
+  toggleQuizTag(quiz: Question, clickedTag: Tag){
+    const quizAlreadyHasTag = quiz.tags.find((tag: Tag) => tag.id === clickedTag.id)
+    if(quizAlreadyHasTag)
+      quiz.tags = quiz.tags.filter((quizTag: Tag) => quizTag.id !== clickedTag.id)
+    else
+      quiz.tags.push(clickedTag)
   }
 
 

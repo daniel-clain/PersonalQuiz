@@ -1,18 +1,19 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { Quiz, QuestionAndAnswer, QuestionAndAnswerIds, QuizFlat } from 'src/app/models/quiz';
 import { Question } from 'src/app/models/question';
 import { Answer } from 'src/app/models/answer';
 import { DocumentSnapshot, QueryDocumentSnapshot } from 'angularfire2/firestore';
-import { Observable } from 'rxjs';
+import { Observable, Subject, Subscriber, Subscription } from 'rxjs';
 import { AnswerService } from '../answer/answer.service';
-import { switchMap } from 'rxjs/operators';
+import { switchMap, debounceTime, map, take } from 'rxjs/operators';
 import { DataService } from '../data/data.service';
 import { QuestionService } from '../question/question.service';
-import { Category } from 'src/app/models/category';
+import { Tag } from 'src/app/models/tag';
 import { CollectionNames } from 'src/app/models/collection-enum';
+import { TagService } from '../tag/tag.service';
 export interface QuestionWithRating extends Question {
   id: string;
-  category: Category;
+  tags: Tag[];
   value: string;
   correctAnswer: string;
   dateUpdated: Date;
@@ -28,11 +29,41 @@ interface TimesQuestionAnswered {
 export class QuizService {
 
   questionsInQuiz = 5;
-  quizzes: Quiz[] = [];
 
-  constructor(private _dataService: DataService, private _questionService: QuestionService, private _answerService: AnswerService) { }
+  quizzes: Quiz[]
+  quizUpdates$: Subject<Quiz[]> = new Subject();
+  quizzesDataSubscription: Subscription
 
-  get quizzes$(): Observable<Quiz[]> {
+  quizzes$: Observable<Quiz[]> = Observable.create((subscriber: Subscriber<Quiz[]>) => {
+    if(!this.quizzesDataSubscription){
+      this.setupQuizzesDataSubscription()
+    }
+    if(this.quizzes)
+      subscriber.next(this.quizzes)
+    this.quizUpdates$.subscribe((updatedQuizzes: Quiz[]) => {
+      subscriber.next(updatedQuizzes)
+    })
+  })
+
+  constructor(private _dataService: DataService, private _answerService: AnswerService, private _questionService: QuestionService, private _tagService: TagService) {
+    this._questionService.questionDeletedSubject$.subscribe((id: string) => {
+      this.removeQuestionAndAnswerFromQuizzes(id)
+    })
+    this._tagService.tagDeletedSubject$.subscribe((id: string) => {
+      this.removeTagFromQuizzes(id)
+    })
+  }
+
+  
+  private setupQuizzesDataSubscription(){
+    this.quizzesDataSubscription = this.getQuizzesData$().subscribe((quizzes: Quiz[]) => {
+      this.quizzes = quizzes;
+      console.log('quizzes updated :', this.quizzes);
+      this.quizUpdates$.next(this.quizzes)
+    })
+  }
+
+  private getQuizzesData$(): Observable<Quiz[]> {
     return this._dataService.getCollectionData(CollectionNames.Quizzes).pipe(switchMap(
       (quizzesSnapshots: QueryDocumentSnapshot<QuizFlat>[]) => {
         return new Observable((subscriber) => {
@@ -83,25 +114,43 @@ export class QuizService {
     return this._dataService.deleteFromCollection(CollectionNames.Quizzes, quiz.id)
   }
 
-  convertToNormalQuiz(quiz: QuizFlat, id): Promise<Quiz> {
+  convertToNormalQuiz(flatQuiz: QuizFlat, id): Promise<Quiz> {
     return Promise.all(
-      quiz.questionsAndAnswersIds.map(
+      flatQuiz.questionsAndAnswersIds.map(
         (questionAndAnswerIds: QuestionAndAnswerIds): Promise<QuestionAndAnswer> => {
+          
           return Promise.all([
             this._questionService.getQuestionById(questionAndAnswerIds.questionId),
             this._answerService.getAnswerById(questionAndAnswerIds.answerId)
           ]).then((x: [Question, Answer]) => (<QuestionAndAnswer>{ question: x[0], answer: x[1] }))
         }
       )
-    )
-      .then((questionAndAnswers: QuestionAndAnswer[]) => {
+    )    
+    .then((questionsAndAnswers: QuestionAndAnswer[]) => {
+      const filteredQuestionsAndAnswers = questionsAndAnswers
+      .filter((questionAndAnswer: QuestionAndAnswer) => {
+        const isQuestion = questionAndAnswer.question !== undefined
+        if(!isQuestion)
+          console.log('questionAndAnswer is filtered out because its question is undefined :', questionAndAnswer);
+        return isQuestion
+      })
+
+      const tagsPromise: Promise<Tag[]> =  flatQuiz.tagIds ? 
+      Promise.all(flatQuiz.tagIds.map(tagId => this._tagService.getTagById(tagId))) : 
+      Promise.resolve(<Tag[]>[])
+
+      return tagsPromise
+      .then((tags: Tag[]) => {
         const normalQuiz: Quiz = {
           id: id,
-          questionsAndAnswers: questionAndAnswers,
-          dateCompleted: quiz.dateCompleted.toDate()
+          tags: tags,
+          questionsAndAnswers: filteredQuestionsAndAnswers,
+          dateCompleted: flatQuiz.dateCompleted.toDate()
         }
         return normalQuiz
       })
+      
+    })
   }
 
   convertToFlatQuiz(quiz: Quiz): QuizFlat {
@@ -116,28 +165,28 @@ export class QuizService {
     const flatQuiz: QuizFlat = {
       questionsAndAnswersIds: questionsAndAnswersIds,
       dateCompleted: quiz.dateCompleted,
+      tagIds: quiz.tags.map((tag: Tag) => tag.id)
     }
     return flatQuiz
   }
 
-  generateQuiz(): Promise<Quiz> {
-    return this.decideQuizQuestions().then(
-      (questionsAndAnswers: QuestionAndAnswer[]) => {
-        const quiz: Quiz = {
-          id: null,
-          dateCompleted: null,
-          questionsAndAnswers: questionsAndAnswers
-        }
-        return quiz
-      }
-    )
-  }
 
-  decideQuizQuestions(): Promise<QuestionAndAnswer[]> {
+  generateQuizQuestions(quizTags: Tag[]): Promise<QuestionAndAnswer[]> {
     return new Promise((resolve, reject) => {
-      const subscription = this._questionService.questions$.subscribe(
+      this._questionService.questions$
+      .pipe(take(1), debounceTime(1))
+      .subscribe(
         (questions: Question[]) => {
-          subscription.unsubscribe()
+          if(quizTags.length){
+            const tagFilteredQuestions: Question[] = questions.filter((question: Question) => {
+              return !!question.tags.find((questionTag: Tag) => {
+                return !!quizTags.find((quizTag: Tag) => quizTag.id === questionTag.id)
+              })
+            })
+            questions = tagFilteredQuestions
+          }
+          if(questions.length < this.questionsInQuiz)
+            reject()
           this.rateQuestions(questions).then(
             (ratedQuestions: QuestionWithRating[]) => {
               const randomQuestions: Question[] = this.getRandomQuestions(ratedQuestions)
@@ -200,9 +249,10 @@ export class QuizService {
   }
 
   getTimesQuestionAnswered(questionId): Promise<TimesQuestionAnswered> {
-    return new Promise((resolve, reject) => {
-      const subscription = this.quizzesFlat$.subscribe((quizzes: QuizFlat[]) => {
-        subscription.unsubscribe();
+    return new Promise(resolve => 
+      this.quizzesFlat$
+      .pipe(take(1))
+      .subscribe((quizzes: QuizFlat[]) => {
         const { timesQuestionAnswered, getAnswerPromises } = quizzes.reduce(
           (x, quiz: QuizFlat) => {
             quiz.questionsAndAnswersIds.forEach((qaid: QuestionAndAnswerIds) => {
@@ -223,7 +273,7 @@ export class QuizService {
             resolve(timesQuestionAnswered)
           })
       })
-    })
+    )
   }
 
   saveQuizResults(quiz: Quiz): Promise<Quiz> {
@@ -253,4 +303,53 @@ export class QuizService {
     })
   }
 
+  removeQuestionAndAnswerFromQuizzes(id: string): Promise<void>{
+    return new Promise(resolve => 
+      this.quizzes$
+      .pipe(take(1))
+      .subscribe((quizzes: Quiz[]) => {
+
+        const deletingAnswersPromises: Promise<void>[] = []
+        const updatingQuizPromise: Promise<void>[] = []
+
+        quizzes.forEach((quiz: Quiz) => {
+          quiz.questionsAndAnswers.forEach((questionAndAnswer: QuestionAndAnswer) => {
+            if(questionAndAnswer.question.id === id){
+              deletingAnswersPromises.push(this._answerService.delete(questionAndAnswer.answer))
+              const updatedQuiz: Quiz = Object.assign({}, quiz)
+              updatedQuiz.questionsAndAnswers = quiz.questionsAndAnswers.filter(
+                (questionAndAnswer: QuestionAndAnswer) => questionAndAnswer.question.id !== id
+              )
+              console.log(`updating quiz, removed questionAndAnswer because question was deleted`, quiz, updatedQuiz);
+              this.update(updatedQuiz)
+            }
+          })
+        })
+
+        Promise.all([...deletingAnswersPromises, ...updatingQuizPromise]).then(() => resolve())
+
+      })
+    )
+  }
+
+  removeTagFromQuizzes(id: string): Promise<void>{
+    return new Promise(resolve => 
+      this.quizzes$
+      .pipe(take(1))
+      .subscribe((quizzes: Quiz[]) => {
+
+        quizzes.forEach((quiz: Quiz) => {
+          quiz.tags.forEach((tag: Tag) => {
+            if(tag.id === id){
+              const updatedQuiz: Quiz = Object.assign({}, quiz)
+              updatedQuiz.tags = quiz.tags.filter((tag: Tag) => tag.id !== id)
+              console.log(`updating quiz, removed tag because tag was deleted`, quiz, updatedQuiz);
+              this.update(updatedQuiz).then(() => resolve())
+            }
+          })
+        })
+      })
+    )
+  }
+  
 }

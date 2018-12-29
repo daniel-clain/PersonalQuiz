@@ -19,7 +19,7 @@ import { QuestionManagementComponent } from './components/views/question-managem
 
 // Partials
 import { MainMenuComponent } from './components/partials/main-menu/main-menu.component';
-import { CategoryManagementComponent } from './components/partials/category-management/category-management.component';
+import { TagManagementComponent } from './components/partials/tag-management/tag-management.component';
 
 
 @NgModule({
@@ -28,7 +28,7 @@ import { CategoryManagementComponent } from './components/partials/category-mana
     LoginComponent,
     MainMenuComponent,
     QuizComponent,
-    CategoryManagementComponent,
+    TagManagementComponent,
     QuestionManagementComponent
   ],
   imports: [

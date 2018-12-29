@@ -9,8 +9,8 @@ import { AuthService } from 'src/app/services/auth/auth.service';
 export class LoginComponent {
 
   constructor(private _authService: AuthService, private _router: Router) {
-    this._authService.isLoggedInStream$.subscribe((isLoggedIn: boolean) => {
-      if(isLoggedIn)
+    this._authService.isUserAuthorised$.subscribe((isUserAuthorised: boolean) => {
+      if(isUserAuthorised)
         this._router.navigate([''])
     })
   }

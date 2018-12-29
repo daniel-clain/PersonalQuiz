@@ -3,32 +3,28 @@
 
 <h3>Add Question</h3>
 
-<form [formGroup]="newQuestionForm" (ngSubmit)="submitNewQuestion()">
-    <div class="field">
-        <span class="field__name">Question: </span>
-        <input class="field__input" formControlName="value">
+<div class="field">
+    <span class="field__name">Question: </span>
+    <input class="field__input" [(ngModel)]="newQuestion.value">
+</div>
+<div class="field">
+    <span class="field__name">Correct Answer: </span>
+    <textarea class="field__text-area field__input" [(ngModel)]="newQuestion.correctAnswer"></textarea>
+</div>
+<div class="field">
+    <span class="field__name">Tags: </span>
+    <div class="field__checkboxes">
+        <label *ngFor="let tag of tags$ | async">
+            <input type="checkbox" [checked]="doesQuestionHaveTag(newQuestion, tag)" (click)="toggleQuestionTag(newQuestion, tag)"> {{tag.value}}
+        </label>
     </div>
-    <div class="field">
-        <span class="field__name">Category: </span>
-        <select class="field__input" formControlName="category">
-            <option 
-                *ngFor="let category of categories$ | async"
-                [ngValue]="category">
-                {{category.value}}
-            </option>
-        </select>
-    </div>
-    <div class="field">
-        <span class="field__name">Correct Answer: </span>
-        <textarea class="field__text-area field__input"  formControlName="correctAnswer"></textarea>
-    </div>
-    <button>Submit</button>
-</form>
+</div>
+<button (click)="submitNewQuestion()">Submit</button>
 
 <hr>
 
 <button (click)="setSubsection('Questions List')">Questions List</button>
-<button (click)="setSubsection('Category Management')">Category Management</button>
+<button (click)="setSubsection('Tag Management')">Tag Management</button>
 
 <div class="list" *ngIf="selectedSubsection === 'Questions List'">
     <h2>Questions List</h2>
@@ -44,18 +40,16 @@
                 <input class="field__input" [(ngModel)]="selectedQuestion.value">
             </div>
             <div class="field">
-                <span class="field__name">Category: </span>
-                <select class="field__input" [(ngModel)]="selectedQuestion.category" [compareWith]="compareCategorySelect">
-                    <option 
-                        *ngFor="let category of categories$ | async"
-                        [ngValue]="category">
-                        {{category.value}}
-                    </option>
-                </select>
-            </div>
-            <div class="field">
                 <span class="field__name">Correct Answer: </span>
                 <textarea class="field__text-area field__input" [(ngModel)]="selectedQuestion.correctAnswer"></textarea>
+            </div>
+            <div class="field">
+                <span class="field__name">Tags: </span>
+                <div class="field__checkboxes">
+                    <label *ngFor="let tag of tags$ | async">
+                        <input type="checkbox" [checked]="doesQuestionHaveTag(selectedQuestion, tag)" (click)="toggleQuestionTag(selectedQuestion, tag)"> {{tag.value}}
+                    </label>
+                </div>
             </div>
             <button (click)="submitUpdatedQuestion()">Update</button>
             <button type="button" (click)="selectQuestion(null)">Close</button>
@@ -66,5 +60,5 @@
 </div>
 
 
-<app-category-management class="questions-list" *ngIf="selectedSubsection === 'Category Management'"></app-category-management>
+<app-tag-management class="questions-list" *ngIf="selectedSubsection === 'Tag Management'"></app-tag-management>
 

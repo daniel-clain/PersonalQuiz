@@ -13,9 +13,9 @@ describe('QuizService', () => {
             
             const quizInstance: QuizService = TestBed.get(QuizService);
             const questionsWithRating: QuestionWithRating[] = [
-                {value: 'x', correctAnswer: 'x', dateUpdated: new Date, id: 'x', rating: 1, category: {id: 'x', value: 'x'}},
-                {value: 'x', correctAnswer: 'x', dateUpdated: new Date, id: 'x', rating: 2, category: {id: 'x', value: 'x'}},
-                {value: 'x', correctAnswer: 'x', dateUpdated: new Date, id: 'x', rating: 3, category: {id: 'x', value: 'x'}},
+                {value: 'x', correctAnswer: 'x', dateUpdated: new Date, id: 'x', rating: 1, tag: {id: 'x', value: 'x'}},
+                {value: 'x', correctAnswer: 'x', dateUpdated: new Date, id: 'x', rating: 2, tag: {id: 'x', value: 'x'}},
+                {value: 'x', correctAnswer: 'x', dateUpdated: new Date, id: 'x', rating: 3, tag: {id: 'x', value: 'x'}},
             ]
             const result: Question[] = quizInstance.getRandomQuestions(questionsWithRating)
 

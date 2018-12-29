@@ -18,6 +18,7 @@ body{
     box-sizing: border-box;
     overflow-y: scroll;
     width: 100%;
+    min-height: 700px;
 }
 
 button{
@@ -75,5 +76,34 @@ input, textarea, select{
     }
     &__text-area{
         height: 6rem;
+    }
+    &__checkboxes {
+        background: white;
+        color: black;
+        text-shadow: none;
+        padding: 1rem 1rem 0.5rem 1rem;
+        max-height: 6rem;
+        border-radius: 5px;
+        border: 1px solid #a9a9a9;
+        overflow-y: scroll;
+
+        label{
+            width: 50%;
+            display: inline-block;
+            padding-right: 1rem;
+            box-sizing: border-box;
+            margin-bottom: 0.5rem;
+
+            input{
+                vertical-align: middle;
+                height: 1rem;
+                margin: 0 0.2rem 0 0;
+            }
+        }
+
+        &--disabled{
+            background-color: #e4e4e4;
+            color: #82807f;
+        }
     }
 }
