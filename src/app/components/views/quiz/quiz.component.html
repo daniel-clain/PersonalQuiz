@@ -7,7 +7,7 @@
 
 <div *ngIf="!quizActive">    
     <div class="field">
-        <span class="field__name">Select tags to for quiz: </span>
+        <span class="field__name">Select tags for next quiz: </span>
         <div class="field__checkboxes field__checkboxes">
             <label *ngFor="let tag of tags$ | async">
                 <input type="checkbox" [checked]="doesQuizHaveTag(newQuiz, tag)" (click)="toggleQuizTag(newQuiz, tag)"> {{tag.value}}
