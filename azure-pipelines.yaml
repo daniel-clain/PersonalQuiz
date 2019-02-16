@@ -8,8 +8,14 @@ variables:
   imageName: 'personal-quiz-image:$(build.buildId)'
 
 steps:
+  - task: ShellScript@2
+    displayName: 'Environment Handler'
+    inputs:
+        scriptPath: ./environment-handler.sh
+        failOnStandardError: true
   - task: Npm@1
     displayName: 'npm install'
+    condition: always()
     inputs: 
       command: custom
       customCommand: ci
