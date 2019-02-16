@@ -1,0 +1,14 @@
+resources:
+  pipelines:
+  - pipeline: Master Pipeline
+    trigger:
+      branches:
+        include:
+        - master
+    jobs:
+    - job: Run this job on a Linux agent
+      pool: Default # the default self-hosted agent pool in your organization
+      steps:
+        - script: echo hello world
+
+      
