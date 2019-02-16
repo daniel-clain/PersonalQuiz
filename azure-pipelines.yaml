@@ -4,7 +4,7 @@ resources:
     trigger:
       branches:
         include:
-        - master
+        - master # test trigger
     pool:
       vmImage: 'Ubuntu-16.04'      
     variables:
