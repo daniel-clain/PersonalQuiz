@@ -11,17 +11,14 @@ steps:
   - task: Npm@1
     displayName: 'npm install'
     inputs: 
-      command: install
+      command: ci
       verbose: false
-  #- task: Npm@1
-  #  displayName: 'install angular cli'
-  #  inputs:
-  #    command: custom
-  #    verbose: false
-  #    customCommand: 'install @angular/cli -g'
   - script: npm run build
     displayName: 'run build'
-  - script: docker build -f Dockerfile -t $(imageName) .
+  - script: |
+      docker build -f Dockerfile -t $(imageName) .
+      docker login -u danielclain -p $(dockerPassword)
+      docker push danielclain/$(imageName)
     displayName: 'docker build'
 
       
