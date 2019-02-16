@@ -11,7 +11,6 @@ variables:
   imageName: 'personal-quiz-image:$(build.buildId)'
 
 steps:
-  - script: npm i @angluar/cli -g
   - script: npm run build
   - script: docker build -f Dockerfile -t $(imageName) .
     displayName: 'docker build'
