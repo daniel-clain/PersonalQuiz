@@ -12,6 +12,10 @@ variables:
 
 steps:
   - task: Npm@1
+    displayName: 'npm install'
+    inputs:
+    verbose: false
+  - task: Npm@1
     displayName: 'install angular cli'
     inputs:
       command: custom
