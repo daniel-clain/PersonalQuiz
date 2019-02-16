@@ -1,21 +1,22 @@
-resources:
-  pipelines:
-  - pipeline: Master Pipeline
-    trigger:
-      branches:
-        include:
-        - master # test trigger
-    pool:
-      vmImage: 'Ubuntu-16.04'      
-    variables:
-      imageName: 'personal-quiz-image:$(build.buildId)'
-    jobs:
-    - job: Run this job on a Linux agent
-      pool: Default # the default self-hosted agent pool in your organization
-      steps:
-        - script: echo hello world
-        - script: npm run build
-        - script: docker build -f Dockerfile -t $(imageName) .
-          displayName: 'docker build'
+
+pool:
+  vmImage: 'Ubuntu-16.04'    
+
+trigger:
+  branches:
+    include:
+    - master # test trigger      
+
+variables:
+  imageName: 'personal-quiz-image:$(build.buildId)'
+
+jobs:
+- job: Run this job on a Linux agent
+  pool: Default # the default self-hosted agent pool in your organization
+  steps:
+    - script: echo hello world
+    - script: npm run build
+    - script: docker build -f Dockerfile -t $(imageName) .
+      displayName: 'docker build'
 
       
