@@ -11,7 +11,8 @@ steps:
   - task: Npm@1
     displayName: 'npm install'
     inputs: 
-      command: ci
+      command: custom
+      customCommand: ci
       verbose: false
   - script: npm run build
     displayName: 'run build'
