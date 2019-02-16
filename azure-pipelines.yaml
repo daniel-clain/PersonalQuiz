@@ -11,7 +11,14 @@ variables:
   imageName: 'personal-quiz-image:$(build.buildId)'
 
 steps:
+  - task: Npm@1
+    displayName: 'install angular cli'
+    inputs:
+      command: custom
+      verbose: false
+      customCommand: 'install @angular/cli -g'
   - script: npm run build
+    displayName: 'run build'
   - script: docker build -f Dockerfile -t $(imageName) .
     displayName: 'docker build'
 
