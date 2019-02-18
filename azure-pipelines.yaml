@@ -24,7 +24,7 @@ steps:
 - script: npm run build
   displayName: 'run build'
 - script: |
-    docker build -t $(imageName) .
+    docker build -t $(imageName):latest .
     docker login -u danielclain -p $(dockerPassword)
     docker push danielclain/$(imageName):latest
   displayName: 'docker build'
