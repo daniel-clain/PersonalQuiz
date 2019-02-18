@@ -25,8 +25,8 @@ steps:
     displayName: 'run build'
   - script: |
       docker build -f Dockerfile -t $(imageName) .
-      docker login -u danielclain -p $(dockerPassword)
-      docker push danielclain/$(imageName)
+      docker login -u danielclain -p $(dockerPassword) https://hub.docker.com/u/danielclain
+      docker push https://hub.docker.com/u/danielclain/$(imageName)
     displayName: 'docker build'
 
       
