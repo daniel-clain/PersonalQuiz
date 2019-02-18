@@ -8,25 +8,25 @@ variables:
   imageName: 'personal-quiz-demo-image-$(Build.SourceBranchName)'
 
 steps:
-  - task: ShellScript@2
-    displayName: 'Environment Handler'
-    inputs:
-      scriptPath: ./environment-handler.sh
-      args: $(Build.SourceBranchName)
-      failOnStandardError: true
-  - task: Npm@1
-    displayName: 'npm install'
-    condition: always()
-    inputs: 
-      command: custom
-      customCommand: ci
-      verbose: false
-  - script: npm run build
-    displayName: 'run build'
-  - script: |
-      docker build -f Dockerfile -t $(imageName) .
-      docker login -u danielclain -p $(dockerPassword) https://hub.docker.com/u/danielclain
-      docker push https://hub.docker.com/u/danielclain/$(imageName)
-    displayName: 'docker build'
+- task: ShellScript@2
+  displayName: 'Environment Handler'
+  inputs:
+    scriptPath: ./environment-handler.sh
+    args: $(Build.SourceBranchName)
+    failOnStandardError: true
+- task: Npm@1
+  displayName: 'npm install'
+  condition: always()
+  inputs: 
+    command: custom
+    customCommand: ci
+    verbose: false
+- script: npm run build
+  displayName: 'run build'
+- script: |
+    docker build -t $(imageName) .
+    docker login -u danielclain -p $(dockerPassword)
+    docker push danielclain/$(imageName)
+  displayName: 'docker build'
 
       
