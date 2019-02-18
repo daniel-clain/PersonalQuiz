@@ -5,14 +5,15 @@ trigger:
     - master # test trigger      
 
 variables:
-  imageName: 'personal-quiz-image:$(build.buildId)'
+  imageName: 'personal-quiz-demo-image-$(Build.SourceBranchName)'
 
 steps:
   - task: ShellScript@2
     displayName: 'Environment Handler'
     inputs:
-        scriptPath: ./environment-handler.sh
-        failOnStandardError: true
+      scriptPath: ./environment-handler.sh
+      args: $(Build.SourceBranchName)
+      failOnStandardError: true
   - task: Npm@1
     displayName: 'npm install'
     condition: always()

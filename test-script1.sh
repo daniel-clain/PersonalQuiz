@@ -1,7 +1,10 @@
 #!/bin/bash
-echo "test script1"
-sleep 10s 
-echo "10 seconds"
-sleep 10s
-./test-script2.sh
-echo "after try to run script 2"
+result="$(grep hello test-script2.sh)"
+
+# if will be true if result is empty string
+if [ -z "$result" ]
+then
+    echo "result has no value"
+else 
+    echo "result has value"
+fi
