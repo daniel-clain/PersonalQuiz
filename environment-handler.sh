@@ -12,6 +12,8 @@ then
     echo "creating service plan"
      az appservice plan create -g PersonalQuizDemo -n PersonalQuizDemoServicePlan -l centralus --sku b1 -
 -subscription Pay-as-you-go --is-linux
+    sleep 10s 
+    echo "10 seconds after app service plan created"
 else
     echo "service plan already exists"
 fi

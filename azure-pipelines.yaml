@@ -11,7 +11,7 @@ steps:
   - task: ShellScript@2
     displayName: 'Environment Handler'
     inputs:
-        scriptPath: ./login-test.sh
+        scriptPath: ./environment-handler.sh
         failOnStandardError: true
   - task: Npm@1
     displayName: 'npm install'
