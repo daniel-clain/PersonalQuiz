@@ -24,7 +24,7 @@ steps:
     command: custom
     customCommand: ci
     verbose: false
-- script: npm run build
+- script: npm run build-feature
   displayName: 'run dev build'
 - script: |
     docker build -t danielclain/$(imgName) ./azure-pipeline

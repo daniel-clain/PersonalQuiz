@@ -22,7 +22,7 @@ steps:
     command: custom
     customCommand: ci
     verbose: false
-- script: ng build --prod
+- script: npm run build-prod
   displayName: 'run prod build'
 - script: |
     docker build -t danielclain/$(imageName) ./azure-pipeline

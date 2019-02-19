@@ -4,6 +4,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve", 
+    "build-prod": "ng build --prod",
+    "build-demo": "ng build --configuration=demo",
+    "build-feature": "ng build",
     "test": "ng test",
     "bdd-tests": "./node_modules/.bin/cucumber-js",
     "lint": "ng lint",
