@@ -17,8 +17,7 @@ if [ -z "$servicePlanSearchResult" ]
 then 
     echo "creating service plan"
     # create service plan
-     az appservice plan create -g PersonalQuizDemo -n PersonalQuizDemoServicePlan -l centralus --sku b1 -
--subscription Pay-as-you-go --is-linux
+    az appservice plan create -g PersonalQuizDemo -n PersonalQuizDemoServicePlan -l centralus --sku b1 --subscription Pay-as-you-go --is-linux
     
 else
     echo "service plan already exists"
