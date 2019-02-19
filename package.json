@@ -2,6 +2,7 @@
   "name": "personal-quiz",
   "version": "0.0.0",
   "scripts": {
+    "ng": "ng",
     "start": "ng serve", 
     "test": "ng test",
     "bdd-tests": "./node_modules/.bin/cucumber-js",
