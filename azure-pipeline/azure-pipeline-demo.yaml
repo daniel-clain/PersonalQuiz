@@ -12,7 +12,7 @@ steps:
 - task: ShellScript@2
   displayName: 'Environment Handler'
   inputs:
-    scriptPath: ./environment-handler.sh
+    scriptPath: ./azure-pipeline/environment-handler.sh
     args: $(envName)
     failOnStandardError: true
 - task: Npm@1
@@ -25,7 +25,7 @@ steps:
 - script: ng build --configuration=demo
   displayName: 'run demo build'
 - script: |
-    docker build -t danielclain/$(imgName) .
+    docker build -t danielclain/$(imgName) ./azure-pipeline
     docker login -u danielclain -p $(dockerPassword)
     docker push danielclain/$(imgName)
   displayName: 'docker build'
