@@ -7,15 +7,15 @@ trigger:
     - master
 
 variables:
-  envName: personal-quiz-$(Build.SourceBranchName)
-  imgName: $(envName)-image
+  webappName: personal-quiz-$(Build.SourceBranchName)
+  imgName: $(webappName)-image
 
 steps:
 - task: ShellScript@2
   displayName: 'Environment Handler'
   inputs:
     scriptPath: ./azure-pipeline/environment-handler.sh
-    args: $(envName)
+    args: $(webappName)
     failOnStandardError: true
 - task: Npm@1
   displayName: 'npm install'
