@@ -4,17 +4,17 @@ import { Observable, Subject, Subscriber, of, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { auth } from 'firebase/app';
-import { User } from 'firebase/auth';
+import { User } from 'firebase';
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
 
   user: User;
-  userUpdates$: Subject<User[]> = new Subject();
+  userUpdates$: Subject<User> = new Subject();
   userDataSubscription: Subscription;
 
-  user$: Observable<User[]> = Observable.create((subscriber: Subscriber<User>) => {
+  user$: Observable<User> = Observable.create((subscriber: Subscriber<User>) => {
     if (!this.userDataSubscription) {
       this.setupUserDataSubscription();
     }

@@ -1,4 +1,4 @@
-import { User } from 'firebase/auth';
+import { User } from 'firebase';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { AuthService } from '../auth/auth.service';

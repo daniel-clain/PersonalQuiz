@@ -25,9 +25,9 @@ steps:
 - script: npm run build-prod
   displayName: 'run prod build'
 - script: |
-    docker build -t danielclain/$(imageName):latest ./azure-pipeline
+    docker build -t danielclain/$(imageName) .
     docker login -u danielclain -p $(dockerPassword)
-    docker push danielclain/$(imageName):latest
+    docker push danielclain/$(imageName)
   displayName: 'docker build'
 
       

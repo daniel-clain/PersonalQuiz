@@ -25,7 +25,7 @@ steps:
 - script: npm run build-demo
   displayName: 'run demo build'
 - script: |
-    docker build -t danielclain/$(imgName):latest ./azure-pipeline
+    docker build -t danielclain/$(imgName):latest .
     docker login -u danielclain -p $(dockerPassword)
     docker push danielclain/$(imgName):latest
   displayName: 'docker build'
