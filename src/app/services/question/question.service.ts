@@ -13,36 +13,37 @@ import { CollectionNames } from 'src/app/models/collection-enum';
 })
 export class QuestionService {
 
-  questions: Question[]
+  questions: Question[];
   questionUpdates$: Subject<Question[]> = new Subject();
   questionsDataSubscription: Subscription;
   questionDeletedSubject$: Subject<string> = new Subject();
 
   questions$: Observable<Question[]> = Observable.create((subscriber: Subscriber<Question[]>) => {
-    if(!this.questionsDataSubscription){
-      this.setupQuestionsDataSubscription()
+    if (!this.questionsDataSubscription) {
+      this.setupQuestionsDataSubscription();
     }
-    if(this.questions)
-      subscriber.next(this.questions)
+    if (this.questions) {
+      subscriber.next(this.questions);
+    }
     this.questionUpdates$.subscribe((updatedQuestions: Question[]) => {
-      subscriber.next(updatedQuestions)
-    })
-  })
-  
+      subscriber.next(updatedQuestions);
+    });
+  });
+
 
 
   constructor(private _dataService: DataService, private _tagService: TagService) {
     this._tagService.tagDeletedSubject$.subscribe((id: string) => {
-      this.removeTagFromQuestions(id)
-    })
+      this.removeTagFromQuestions(id);
+    });
   }
 
-  private setupQuestionsDataSubscription(){
+  private setupQuestionsDataSubscription() {
     this.questionsDataSubscription = this.getQuestionsData$().subscribe((questions: Question[]) => {
       this.questions = questions;
       console.log('questions updated :', this.questions);
-      this.questionUpdates$.next(this.questions)
-    })
+      this.questionUpdates$.next(this.questions);
+    });
   }
 
 
@@ -54,51 +55,53 @@ export class QuestionService {
           const questionPromises: Promise<Question>[] =
             questionsSnapshot.map((questionsSnapshot: DocumentSnapshot<QuestionFlat>) => {
               const flatQuestion: QuestionFlat = questionsSnapshot.data();
-              if(!flatQuestion)
-                throw Error(`question ${questionsSnapshot.id} has no data`)
-              return this.convertToNormalQuestion(flatQuestion, questionsSnapshot.id)
-            })
+              if (!flatQuestion) {
+                throw Error(`question ${questionsSnapshot.id} has no data`);
+              }
+              return this.convertToNormalQuestion(flatQuestion, questionsSnapshot.id);
+            });
 
           Promise.all(questionPromises).then((questions: Question[]) => {
-            subscriber.next(questions)
-          })
-        })
+            subscriber.next(questions);
+          });
+        });
 
       }
-    ))
+    ));
   }
 
-  getQuestionById(id): Promise<Question> {    
+  getQuestionById(id): Promise<Question> {
     return new Promise(resolve =>
       this.questions$
       .pipe(
         map((question: Question[]) => {
-          const foundQuestion: Question = question.find((questions: Question) => questions.id == id)
-          if(!foundQuestion)
+          const foundQuestion: Question = question.find((questions: Question) => questions.id === id);
+          if (!foundQuestion) {
             console.error(`getQuestionById(${id}) found no data`);
-          return foundQuestion
+          }
+          return foundQuestion;
         }),
         debounceTime(1),
         take(1)
       )
       .subscribe((question: Question) => resolve(question))
-    )    
+    );
   }
 
   add(question: Question): Promise<string> {
-    const flatQuestion: QuestionFlat = this.convertToFlatQuestion(question)
-    return this._dataService.addToCollection(CollectionNames.Questions, flatQuestion)
+    const flatQuestion: QuestionFlat = this.convertToFlatQuestion(question);
+    return this._dataService.addToCollection(CollectionNames.Questions, flatQuestion);
   }
 
   update(question: Question) {
-    const flatQuestion: QuestionFlat = this.convertToFlatQuestion(question)
+    const flatQuestion: QuestionFlat = this.convertToFlatQuestion(question);
     return this._dataService.updateInCollection(CollectionNames.Questions, question.id, flatQuestion)
-      .then(() => console.log('question updated'))
+      .then(() => console.log('question updated'));
   }
 
   delete(question: Question): Promise<void> {
-    return this._dataService.deleteFromCollection(CollectionNames.Questions ,question.id)
-    .then(() => this.questionDeletedSubject$.next(question.id))
+    return this._dataService.deleteFromCollection(CollectionNames.Questions , question.id)
+    .then(() => this.questionDeletedSubject$.next(question.id));
   }
 
   convertToNormalQuestion(flatQuestion: QuestionFlat, id): Promise<Question> {
@@ -111,10 +114,10 @@ export class QuestionService {
           correctAnswer: flatQuestion.correctAnswer,
           dateUpdated: flatQuestion.dateUpdated.toDate(),
 
-        }
-        return normalQuestion
+        };
+        return normalQuestion;
       },
-    )
+    );
   }
 
   convertToFlatQuestion(question: Question): QuestionFlat {
@@ -123,34 +126,34 @@ export class QuestionService {
       dateUpdated: new Date,
       tagIds: question.tags.map((tag: Tag) => tag.id),
       correctAnswer: question.correctAnswer
-    }
-    return flatQuestion
+    };
+    return flatQuestion;
   }
 
-  removeTagFromQuestions(id: string): Promise<void>{
-    return new Promise(resolve => 
+  removeTagFromQuestions(id: string): Promise<void> {
+    return new Promise(resolve =>
       this.questions$
       .pipe(take(1))
       .subscribe((questions: Question[]) => {
-        const updatingQuestionPromises: Promise<void>[] = []
+        const updatingQuestionPromises: Promise<void>[] = [];
 
         questions.forEach((question: Question) => {
           question.tags.forEach((tag: Tag) => {
-            if(tag.id === id){
-              const updatedQuestion: Question = Object.assign({}, question)
+            if (tag.id === id) {
+              const updatedQuestion: Question = Object.assign({}, question);
               updatedQuestion.tags = question.tags.filter(
                 (tag: Tag) => tag.id !== id
-              )
+              );
               console.log(`updating question, removed tag because tag was deleted`, question, updatedQuestion);
-              this.update(updatedQuestion)
+              this.update(updatedQuestion);
             }
-          })
-        })
+          });
+        });
 
-        Promise.all(updatingQuestionPromises).then(() => resolve())
+        Promise.all(updatingQuestionPromises).then(() => resolve());
 
       })
-    )
+    );
   }
 
 

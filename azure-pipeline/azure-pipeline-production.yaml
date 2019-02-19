@@ -1,0 +1,33 @@
+
+trigger:
+  branches:
+    include:
+    - master
+
+variables:
+  envName: personal-quiz-prod
+  imgName: $(envName)-image
+
+steps:
+- task: ShellScript@2
+  displayName: 'Environment Handler'
+  inputs:
+    scriptPath: ./environment-handler.sh
+    args: $(envName)
+    failOnStandardError: true
+- task: Npm@1
+  displayName: 'npm install'
+  condition: always()
+  inputs: 
+    command: custom
+    customCommand: ci
+    verbose: false
+- script: ng build --prod
+  displayName: 'run prod build'
+- script: |
+    docker build -t danielclain/$(imageName) .
+    docker login -u danielclain -p $(dockerPassword)
+    docker push danielclain/$(imageName)
+  displayName: 'docker build'
+
+      

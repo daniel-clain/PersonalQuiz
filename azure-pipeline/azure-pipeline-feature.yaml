@@ -2,17 +2,20 @@
 trigger:
   branches:
     include:
-    - master # test trigger      
+    - feature/*
+    eclude:
+    - master
 
 variables:
-  imageName: 'personal-quiz-demo-image-$(Build.SourceBranchName)'
+  envName: personal-quiz-$(Build.SourceBranchName)
+  imgName: $(envName)-image
 
 steps:
 - task: ShellScript@2
   displayName: 'Environment Handler'
   inputs:
     scriptPath: ./environment-handler.sh
-    args: $(Build.SourceBranchName)
+    args: $(envName)
     failOnStandardError: true
 - task: Npm@1
   displayName: 'npm install'
@@ -22,11 +25,11 @@ steps:
     customCommand: ci
     verbose: false
 - script: npm run build
-  displayName: 'run build'
+  displayName: 'run dev build'
 - script: |
-    docker build -t danielclain/$(imageName) .
+    docker build -t danielclain/$(imgName) .
     docker login -u danielclain -p $(dockerPassword)
-    docker push danielclain/$(imageName)
+    docker push danielclain/$(imgName)
   displayName: 'docker build'
 
       
