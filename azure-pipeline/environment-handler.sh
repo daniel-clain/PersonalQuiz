@@ -38,5 +38,8 @@ then
 else
     echo "webapp for $webappName already exists, no need to run create webapp script for $webappName"
 fi
+sleep 10m
+az appservice plan delete -g PersonalQuizDemo -n PersonalQuizDemoServicePlan
+az webapp delete -g PersonalQuizDemo -n ${webappName}
 
 
