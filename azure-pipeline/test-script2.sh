@@ -1,4 +1,15 @@
 #!/bin/bash
-echo hello
-servicePlanSearchResult="$(az appservice plan list -g PersonalQuizDemo --subscription Pay-as-you-go --query '[].{name: name}' | grep PersonalQuizDemoServicePlan)"
-echo $servicePlanSearchResult
+
+string='TOP-446_Pipeline_for_feature_branches'
+
+regex="TOP-([0-9]*)"
+
+
+if [[ $string =~ $regex ]]; then
+    echo ${BASH_REMATCH[1]}
+else
+    echo "oops"
+    echo ${BASH_REMATCH[1]}
+fi
+
+

@@ -1,0 +1,38 @@
+
+trigger:
+  branches:
+    include:
+    - master
+
+steps:
+- task: Npm@1
+  displayName: Install Dependencies
+  condition: always()
+  inputs: 
+    command: custom
+    customCommand: ci
+    verbose: false
+- script: npm run build-prod
+  displayName: Build Production App
+- script: |
+    echo Build.ArtifactStagingDirectory = $(Build.ArtifactStagingDirectory)
+    echo Build.SourcesDirectory = $(Build.SourcesDirectory)
+  displayName: Echo variables
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: $(Build.SourcesDirectory)/dist/PersonalQuiz
+    TargetFolder: $(Build.ArtifactStagingDirectory)
+  displayName: Copy Build to Artifacts Directory 
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: $(Build.ArtifactStagingDirectory)
+    ArtifactName: ProductionArtifact
+    PublishLocation: FilePath
+    TargetPath: ProductionArtifactFolder
+  displayName: Publish Build Artifacts
+    
+
+
+    
+
+      
