@@ -17,10 +17,12 @@ steps:
 - script: |
     echo Build.ArtifactStagingDirectory = $(Build.ArtifactStagingDirectory)
     echo Build.SourcesDirectory = $(Build.SourcesDirectory)
+    echo ls build source directory
+    ls $(Build.SourcesDirectory)
   displayName: Echo variables
 - task: CopyFiles@2
   inputs:
-    SourceFolder: $(Build.SourcesDirectory)/dist/PersonalQuiz
+    SourceFolder: $(Build.SourcesDirectory)
     TargetFolder: $(Build.ArtifactStagingDirectory)
   displayName: Copy Build to Artifacts Directory 
 - task: PublishBuildArtifacts@1
