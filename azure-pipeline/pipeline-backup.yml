@@ -1,0 +1,13 @@
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: $(Build.SourcesDirectory)/dist/PersonalQuiz
+    TargetFolder: $(Build.ArtifactStagingDirectory)
+  displayName: Copy Build to Artifacts Directory 
+  
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: $(Build.ArtifactStagingDirectory)
+    ArtifactName: ProductionArtifact
+    PublishLocation: FilePath
+    TargetPath: ProductionArtifactFolder
+  displayName: Publish Build Artifacts

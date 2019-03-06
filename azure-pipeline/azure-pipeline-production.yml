@@ -17,20 +17,14 @@ steps:
 - script: |
     echo Build.ArtifactStagingDirectory = $(Build.ArtifactStagingDirectory)
     echo Build.SourcesDirectory = $(Build.SourcesDirectory)
-    echo ls build source directory
-    ls $(Build.SourcesDirectory)
+    echo ls build source directory dist
+    ls $(Build.SourcesDirectory)/dist
   displayName: Echo variables
-- task: CopyFiles@2
-  inputs:
-    SourceFolder: $(Build.SourcesDirectory)
-    TargetFolder: $(Build.ArtifactStagingDirectory)
-  displayName: Copy Build to Artifacts Directory 
+
 - task: PublishBuildArtifacts@1
   inputs:
-    PathtoPublish: $(Build.ArtifactStagingDirectory)
+    PathtoPublish: $(Build.SourcesDirectory)/dist/PersonalQuiz
     ArtifactName: ProductionArtifact
-    PublishLocation: FilePath
-    TargetPath: ProductionArtifactFolder
   displayName: Publish Build Artifacts
     
 
