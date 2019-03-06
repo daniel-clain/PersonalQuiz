@@ -9,7 +9,7 @@ import { switchMap, debounceTime, map, take } from 'rxjs/operators';
 import { DataService } from '../data/data.service';
 import { QuestionService } from '../question/question.service';
 import { Tag } from 'src/app/models/tag';
-import { CollectionNames } from 'src/app/models/collection-enum';
+import { CollectionNames } from '../../enums/collection-names-enum';
 import { TagService } from '../tag/tag.service';
 export interface QuestionWithRating extends Question {
   id: string;

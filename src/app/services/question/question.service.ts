@@ -6,7 +6,7 @@ import { Tag } from 'src/app/models/tag';
 import { DocumentSnapshot, QueryDocumentSnapshot } from 'angularfire2/firestore';
 import { Observable, Subject, Subscriber, Subscription } from 'rxjs';
 import { switchMap, map, debounceTime, take } from 'rxjs/operators';
-import { CollectionNames } from 'src/app/models/collection-enum';
+import { CollectionNames } from '../../enums/collection-names-enum';
 
 @Injectable({
   providedIn: 'root'

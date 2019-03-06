@@ -1,11 +1,11 @@
 
-<div *ngIf="!quizActive && notEnoughQuestions">
+<div id="notEnoughQuestionsError" *ngIf="quizState === 'Not Enough Questions'">
     <p>
         ! You currently dont have enough questions to run a quiz, you need at least {{questionsInQuiz}}. Add more questions and try again.
     </p>
 </div>
 
-<div *ngIf="!quizActive">    
+<div id="quizSetup" *ngIf="quizState !== 'Quiz In Progress'">
     <div class="field">
         <span class="field__name">Select tags for next quiz: </span>
         <div class="field__checkboxes field__checkboxes">
@@ -17,7 +17,7 @@
     <button (click)="startQuiz()">Start Quiz</button>
 </div>
 
-<div *ngIf="quizActive">
+<div id="quiz" *ngIf="quizState === 'Quiz In Progress'">
     <h3>Question {{questionNumber}} of {{questionsInQuiz}}</h3>
     <div class="quiz-question">{{newQuiz.questionsAndAnswers[questionNumber-1].question.value}}</div>
 
@@ -51,13 +51,8 @@
 
 </div>
 
-<hr>
-
-
-
-<button (click)="setSubsection('Quizzes List')">Quizzes List</button>
-
-<div class="quiz list" *ngIf="selectedSubsection === 'Quizzes List'">
+<div id="quizSummary" class="quiz list" *ngIf="quizState === 'Post-Quiz Summary'">
+    <hr>
     <h2>Past Quizzes</h2>
     <div *ngFor="let quiz of quizzes$ | async">
         <div (click)="selectQuiz(quiz)" class="quiz list__item " >

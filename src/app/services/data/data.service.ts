@@ -4,7 +4,7 @@ import { Observable, of } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { AngularFirestore, AngularFirestoreCollection, DocumentSnapshot, Action, DocumentData } from 'angularfire2/firestore';
 import { switchMap, map, take } from 'rxjs/operators';
-import { CollectionNames } from 'src/app/models/collection-enum';
+import { CollectionNames } from '../../enums/collection-names-enum';
 
 @Injectable({
   providedIn: 'root'
@@ -14,11 +14,21 @@ export class DataService {
   constructor(private _afs: AngularFirestore, private _authService: AuthService) { }
 
   getCollectionData(collectionName: CollectionNames): Observable<any[]> {
+
+    if (collectionName === CollectionNames.Quizzes) {
+      console.log('quizzes get data');
+    }
     return this.getCollection(collectionName).pipe(switchMap(
-      (collection: AngularFirestoreCollection) => (
-        collection.snapshotChanges()
-          .pipe(map(this.transformSnapshot))
-      )
+      (collection: AngularFirestoreCollection) => {
+        if (collectionName === CollectionNames.Quizzes) {
+          collection.ref.orderBy('updatedDate').limit(5).onSnapshot(snapshot => {
+            console.log('ding', snapshot);
+          });
+
+        }
+        return collection.snapshotChanges()
+          .pipe(map(this.transformSnapshot));
+      }
     ));
   }
 

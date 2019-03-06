@@ -1,4 +1,4 @@
-export enum CollectionNames{
+export enum CollectionNames {
     'Questions',
     'Answers',
     'Quizzes',
