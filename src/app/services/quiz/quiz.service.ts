@@ -212,6 +212,10 @@ export class QuizService {
     });
   }
 
+  test(a, b) {
+    return a + b;
+  }
+
   getRandomQuestions(ratedQuestions: QuestionWithRating[]): Question[] {
     const questions: Question[] =
       ratedQuestions

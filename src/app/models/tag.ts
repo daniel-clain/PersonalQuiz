@@ -1,7 +1,7 @@
-export interface Tag{
+export interface Tag {
     id: string;
     value: string;
 }
-export interface TagFlat{
+export interface TagFlat {
     value: string;
 }

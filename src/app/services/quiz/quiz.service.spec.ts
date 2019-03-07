@@ -1,31 +1,38 @@
-/* import { async, TestBed } from '@angular/core/testing';
-import { QuizService, QuestionWithRating } from './quiz.service'
-import { Question } from 'src/app/models/question';
+import { TagService } from 'src/app/services/tag/tag.service';
+import { QuestionService } from './../question/question.service';
+import { AnswerService } from './../answer/answer.service';
+import { DataService } from './../data/data.service';
+import { async, TestBed } from '@angular/core/testing';
+import { QuizService } from './quiz.service';
+
+class MockDataService extends DataService {
+  
+}
+class MockAnswerService extends AnswerService {}
+class MockQuestionService extends QuestionService {}
+class MockTagService extends TagService {}
 
 describe('QuizService', () => {
-    describe('getRandomQuestions', () => {
+  let quizService: QuizService = new QuizService(MockDataService, MockAnswerService, MockQuestionService, MockTagService);
 
-        beforeEach(async(() => {
-            TestBed.configureTestingModule({providers: [QuizService]})
-        }))
+  /* beforeEach(async() => {
+    TestBed.configureTestingModule({
+      providers: [
+        QuizService,
+        { provide: DataService, useValue: MockDataService },
+        { provide: AnswerService, useValue: MockAnswerService },
+        { provide: QuestionService, useValue: MockQuestionService },
+        { provide: TagService, useValue: MockTagService }
+      ]
+    });
+    quizService = TestBed.get(QuizService);
+    console.log('quizService :', quizService);
+  }); */
 
-        it('should take a rated questions object and return a list of questions', () => {
-            
-            const quizInstance: QuizService = TestBed.get(QuizService);
-            const questionsWithRating: QuestionWithRating[] = [
-                {value: 'x', correctAnswer: 'x', dateUpdated: new Date, id: 'x', rating: 1, tag: {id: 'x', value: 'x'}},
-                {value: 'x', correctAnswer: 'x', dateUpdated: new Date, id: 'x', rating: 2, tag: {id: 'x', value: 'x'}},
-                {value: 'x', correctAnswer: 'x', dateUpdated: new Date, id: 'x', rating: 3, tag: {id: 'x', value: 'x'}},
-            ]
-            const result: Question[] = quizInstance.getRandomQuestions(questionsWithRating)
-
-            expect(result.length).toBeTruthy()
-        })
-
-        xit('should have a higher probability to return questions with a low rating', () => {
-
-        })
-
-
-    })
-}) */
+  describe('test', () => {
+    it('should add 2 and 5 and the result should be 7', () => {
+      const testResult = quizService.test(2, 5);
+      expect(testResult).toBe(7);
+    });
+  });
+});
