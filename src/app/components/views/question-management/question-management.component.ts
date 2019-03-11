@@ -1,3 +1,4 @@
+import {TestService} from './../../../services/test/test.service';
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Question } from 'src/app/models/question';
@@ -12,8 +13,8 @@ import { TagService } from 'src/app/services/tag/tag.service';
 })
 export class QuestionManagementComponent implements OnInit {
 
-  questions$: Observable<Question[]>
-  tags$: Observable<Tag[]>
+  questions$: Observable<Question[]>;
+  tags$: Observable<Tag[]>;
 
   selectedSubsection: string;
   selectedQuestion: Question;
@@ -24,58 +25,61 @@ export class QuestionManagementComponent implements OnInit {
     correctAnswer: null,
     tags: [],
     dateUpdated: null
-  }
+  };
 
-  constructor(private _questionService: QuestionService, private _tagService: TagService) { }
+  constructor(private _questionService: QuestionService, private _tagService: TagService, private _testService: TestService) { }
 
   ngOnInit() {
     this.questions$ = this._questionService.questions$;
-    this.tags$ = this._tagService.tags$
+    this.tags$ = this._tagService.tags$;
+    const returnVal = this._testService.doTest();
+    console.log('returnVal :', returnVal);
   }
 
-  toggleQuestionTag(question: Question, clickedTag: Tag){
-    const questionAlreadyHasTag = question.tags.find((tag: Tag) => tag.id === clickedTag.id)
-    if(questionAlreadyHasTag)
-      question.tags = question.tags.filter((tag: Tag) => tag.id !== clickedTag.id)
-    else
-      question.tags.push(clickedTag)
+  toggleQuestionTag(question: Question, clickedTag: Tag) {
+    const questionAlreadyHasTag = question.tags.find((tag: Tag) => tag.id === clickedTag.id);
+    if (questionAlreadyHasTag) {
+      question.tags = question.tags.filter((tag: Tag) => tag.id !== clickedTag.id);
+    } else {
+      question.tags.push(clickedTag);
+    }
   }
 
-  doesQuestionHaveTag(question: Question, tag: Tag): boolean{
-    return !!question.tags.find((questionTag: Tag) => questionTag.id === tag.id)
+  doesQuestionHaveTag(question: Question, tag: Tag): boolean {
+    return !!question.tags.find((questionTag: Tag) => questionTag.id === tag.id);
   }
 
 
   submitNewQuestion() {
-    const question: Question = Object.assign({}, this.newQuestion)
-    question.dateUpdated = new Date
+    const question: Question = Object.assign({}, this.newQuestion);
+    question.dateUpdated = new Date;
     this._questionService.add(question).then(() => {
-      console.log('new question saved')
-      this.resetNewQuestion()
-    })
+      console.log('new question saved');
+      this.resetNewQuestion();
+    });
   }
 
-  resetNewQuestion(){
+  resetNewQuestion() {
     this.newQuestion = {
       id: null,
       value: null,
       correctAnswer: null,
       tags: [],
       dateUpdated: null
-    }
+    };
   }
 
   submitUpdatedQuestion() {
-    this.selectedQuestion.dateUpdated = new Date
-    this._questionService.update(this.selectedQuestion).then(() => console.log('question has been saved'))
+    this.selectedQuestion.dateUpdated = new Date;
+    this._questionService.update(this.selectedQuestion).then(() => console.log('question has been saved'));
   }
 
   deleteQuestion() {
     const deleteConfirmed: boolean = window.confirm(
-      `Are you sure you want to delete question: \n\n ${this.selectedQuestion.value}`)
+      `Are you sure you want to delete question: \n\n ${this.selectedQuestion.value}`);
 
     if (deleteConfirmed) {
-      this._questionService.delete(this.selectedQuestion).then(() => console.log('question deleted'))
+      this._questionService.delete(this.selectedQuestion).then(() => console.log('question deleted'));
     }
   }
 
@@ -84,7 +88,7 @@ export class QuestionManagementComponent implements OnInit {
   }
 
   setSubsection(subsection) {
-    this.selectedSubsection = subsection
+    this.selectedSubsection = subsection;
     delete this.selectedQuestion;
   }
 

@@ -235,7 +235,7 @@ export class QuizService {
     return questions;
   }
 
-  rateQuestions(questions: Question[]) {
+  rateQuestions(questions: Question[]): Promise<QuestionWithRating[]> {
 
     return Promise.all(questions
       .map(async (question: Question) => {

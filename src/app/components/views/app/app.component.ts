@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, ActivationEnd } from '@angular/router'
+import { Router, ActivationEnd } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -9,14 +9,14 @@ export class AppComponent implements OnInit {
 
   routeTitle: string;
 
-  constructor(private router: Router){ }
+  constructor(private router: Router) { }
 
-  ngOnInit(){
+  ngOnInit() {
     this.router.events.subscribe(
       event => ((event instanceof ActivationEnd) && this.setRouteTitle(event))
-    )
+    );
   }
-  setRouteTitle(activationEndEvent: ActivationEnd){
+  setRouteTitle(activationEndEvent: ActivationEnd) {
     this.routeTitle = activationEndEvent.snapshot.data.title;
   }
 }
