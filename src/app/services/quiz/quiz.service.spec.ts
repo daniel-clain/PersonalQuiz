@@ -36,7 +36,8 @@ class MockTagService extends TagService {
 
 
 
-fdescribe('QuizService', () => {
+
+/* xdescribe('QuizService', () => {
   const quizService: QuizService = new QuizService(
     new MockDataService(null, null),
     new MockAnswerService(null),
@@ -75,4 +76,4 @@ fdescribe('QuizService', () => {
       });
     });
   });
-});
+}); */

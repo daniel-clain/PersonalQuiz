@@ -10,14 +10,26 @@ class Test2ServiceMock extends Test2Service {
   }
 }
 
-xdescribe('TestService', () => {
+describe('TestService', () => {
 
-  const service: TestService = new TestService(new Test2ServiceMock);
+  // const service: TestService = new TestService(new Test2ServiceMock);
+  let testService: TestService;
+
+  beforeEach( () => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: Test2Service, useValue: new Test2ServiceMock() }
+      ]
+    });
+    // Inject both the service-to-test and its (spy) dependency
+    testService = TestBed.get(TestService);
+    console.log('test service' + testService);
+  });
 
 
   it('should be created', () => {
-    const returnVal: string = service.doTest();
+    const returnVal: string = testService.doTest();
     console.log('returnVal :', returnVal);
-    expect(service).toBeTruthy();
+    expect(returnVal).toEqual('dog plusTest');
   });
 });
