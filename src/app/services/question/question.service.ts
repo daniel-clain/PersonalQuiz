@@ -31,8 +31,11 @@ export class QuestionService {
   });
 
 
-
   constructor(private _dataService: DataService, private _tagService: TagService) {
+    this.setupTagDeletedSubscription();
+  }
+
+  private setupTagDeletedSubscription() {
     this._tagService.tagDeletedSubject$.subscribe((id: string) => {
       this.removeTagFromQuestions(id);
     });

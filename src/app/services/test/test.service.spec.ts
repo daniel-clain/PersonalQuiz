@@ -10,7 +10,7 @@ class Test2ServiceMock extends Test2Service {
   }
 }
 
-describe('TestService', () => {
+xdescribe('TestService', () => {
 
   // const service: TestService = new TestService(new Test2ServiceMock);
   let testService: TestService;
@@ -27,7 +27,7 @@ describe('TestService', () => {
   });
 
 
-  it('should be created', () => {
+  it('doTest should return dog plusTest', () => {
     const returnVal: string = testService.doTest();
     console.log('returnVal :', returnVal);
     expect(returnVal).toEqual('dog plusTest');

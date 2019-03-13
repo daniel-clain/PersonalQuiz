@@ -17,11 +17,11 @@ export interface QuestionWithRating extends Question {
   value: string;
   correctAnswer: string;
   dateUpdated: Date;
-  rating: 1 | 2 | 3 | 4 | 5;
+  rating: number;
 }
 interface TimesQuestionAnswered {
-  total: number;
-  correctCount: number;
+  timesAsked: number;
+  timesAnsweredCorrectly: number;
 }
 @Injectable({
   providedIn: 'root'
@@ -29,6 +29,7 @@ interface TimesQuestionAnswered {
 export class QuizService {
 
   questionsInQuiz = 5;
+  newQuestionRatingVal = 2;
 
   quizzes: Quiz[];
   quizUpdates$: Subject<Quiz[]> = new Subject();
@@ -239,25 +240,33 @@ export class QuizService {
 
     return Promise.all(questions
       .map(async (question: Question) => {
-        let rating;
+        let rating: number;
         let questionWithRating: QuestionWithRating;
 
         const timesQuestionAnswered: TimesQuestionAnswered = await this.getTimesQuestionAnswered(question.id);
-        const { total, correctCount } = timesQuestionAnswered;
+        const { timesAsked, timesAnsweredCorrectly } = timesQuestionAnswered;
 
-        if (total === 0) {
-          rating = 2;
-        } else {
-          const percentageCorrect = correctCount / total * 100;
-          rating = Math.floor(percentageCorrect / 100 * 5);
-        }
-        console.log(`question: ${question.value} has been answered correctly ${correctCount} out of ${total}. It has a selection rating of ${rating}`);
+        rating = this.getQuestionRating(timesAsked, timesAnsweredCorrectly);
+
+        console.log(`question: ${question.value} has been answered correctly ${timesAnsweredCorrectly} out of ${timesAsked}. It has a selection rating of ${rating}`);
 
         questionWithRating = Object.assign({ rating: rating }, question);
 
         return questionWithRating;
       })
     );
+  }
+
+  getQuestionRating(timesAsked: number, timesAnsweredCorrectly: number): number {
+    if (timesAsked === 0) {
+      return this.newQuestionRatingVal;
+    } else {
+      let rating;
+      const percentageCorrect = timesAnsweredCorrectly / timesAsked * 100;
+      rating = Math.floor(percentageCorrect / 100 * 5);
+      return rating;
+    }
+
   }
 
   getTimesQuestionAnswered(questionId): Promise<TimesQuestionAnswered> {
@@ -269,17 +278,19 @@ export class QuizService {
           (x, quiz: QuizFlat) => {
             quiz.questionsAndAnswersIds.forEach((qaid: QuestionAndAnswerIds) => {
               if (qaid.questionId === questionId) {
-                x.timesQuestionAnswered.total++;
+                x.timesQuestionAnswered.timesAsked++;
                 x.getAnswerPromises.push(this._answerService.getAnswerById(qaid.answerId));
               }
             });
             return x;
-          }, { timesQuestionAnswered: { total: 0, correctCount: 0 }, getAnswerPromises: [] }
+          }, { timesQuestionAnswered: <TimesQuestionAnswered>{ timesAsked: 0, timesAnsweredCorrectly: 0 }, getAnswerPromises: [] }
         );
         Promise.all(<Promise<Answer>[]>getAnswerPromises)
           .then((answers: Answer[]) => {
-            timesQuestionAnswered.correctCount = answers.reduce((count, answer: Answer) => {
-              answer.correct === true ? count++ : null;
+            timesQuestionAnswered.timesAnsweredCorrectly = answers.reduce((count, answer: Answer) => {
+              if (answer.correct) {
+                count++;
+              }
               return count;
             }, 0);
             resolve(timesQuestionAnswered);
