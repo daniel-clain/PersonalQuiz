@@ -196,41 +196,42 @@ export class QuizService {
           if (questions.length < this.questionsInQuiz) {
             reject();
           }
-          this.rateQuestions(questions).then(
-            (ratedQuestions: QuestionWithRating[]) => {
-              const randomQuestions: Question[] = this.getRandomQuestions(ratedQuestions);
-              const quizQuestions: QuestionAndAnswer[] = randomQuestions.map((question: Question) => {
-                return {
-                  question: question,
-                  answer: undefined
-                };
-              });
-              resolve(quizQuestions);
-            }
-          );
+          this.rateQuestions(questions)
+          .then((ratedQuestions: QuestionWithRating[]) => {
+            const sortedByRating = ratedQuestions.sort((a, b) => a.rating - b.rating);
+            console.table(sortedByRating, ['value', 'dateUpdated', 'rating']);
+            const randomQuestions: Question[] = this.getRandomQuestions(ratedQuestions);
+            const quizQuestions: QuestionAndAnswer[] = randomQuestions.map((question: Question) => {
+              return {
+                question: question,
+                answer: undefined
+              };
+            });
+            resolve(quizQuestions);
+          });
         }
       );
     });
   }
 
-  test(a, b) {
-    return a + b;
-  }
-
   getRandomQuestions(ratedQuestions: QuestionWithRating[]): Question[] {
-    const questions: Question[] =
-      ratedQuestions
-        .map((question: QuestionWithRating) => {
-          const ques = Object.assign(question);
-          ques.selectionRandomValue = Math.floor(Math.random() * ques.rating);
-          console.log(`question: ${question.value}, randomValue: ${ques.selectionRandomValue}`);
-          return ques;
-        })
-        .sort((a, b) => a.selectionRandomValue - b.selectionRandomValue)
+
+    const questionsWithRandomVal: any = ratedQuestions
+    .map((question: QuestionWithRating) => {
+      const ques = Object.assign(question);
+      ques.selectionRandomValue = Math.floor(Math.random() * ques.rating);
+      delete question.rating;
+      return question as any;
+    })
+    .sort((a, b) => a.selectionRandomValue - b.selectionRandomValue);
+
+    console.table(questionsWithRandomVal, ['value', 'selectionRandomValue']);
+
+    const questions: Question[] = questionsWithRandomVal
         .slice(0, this.questionsInQuiz)
-        .map((question: QuestionWithRating) => {
-          delete question.rating;
-          return <Question>question;
+        .map(ques => {
+          delete ques.selectionRandomValue;
+          return ques;
         });
 
     return questions;
@@ -238,36 +239,51 @@ export class QuizService {
 
   rateQuestions(questions: Question[]): Promise<QuestionWithRating[]> {
 
+    const {mostRecentDate, lastAskedDaysRange} = this.getLaskAskedDaysRange(questions);
     return Promise.all(questions
       .map(async (question: Question) => {
-        let rating: number;
-        let questionWithRating: QuestionWithRating;
-
-        const timesQuestionAnswered: TimesQuestionAnswered = await this.getTimesQuestionAnswered(question.id);
-        const { timesAsked, timesAnsweredCorrectly } = timesQuestionAnswered;
-
-        rating = this.getQuestionRating(timesAsked, timesAnsweredCorrectly);
-
-        console.log(`question: ${question.value} has been answered correctly ${timesAnsweredCorrectly} out of ${timesAsked}. It has a selection rating of ${rating}`);
-
-        questionWithRating = Object.assign({ rating: rating }, question);
-
-        return questionWithRating;
+        const correctnessRating: number = await this.getCorrectnessRating(question);
+        const lastAskedRating: number = this.getLastAskedRating(mostRecentDate, question.dateUpdated, lastAskedDaysRange);
+        return {...question, rating: Math.round((correctnessRating + lastAskedRating) / 2)};
       })
     );
   }
 
-  getQuestionRating(timesAsked: number, timesAnsweredCorrectly: number): number {
-    if (timesAsked === 0) {
-      return this.newQuestionRatingVal;
-    } else {
-      let rating;
-      const percentageCorrect = timesAnsweredCorrectly / timesAsked * 100;
-      rating = Math.floor(percentageCorrect / 100 * 5);
-      return rating;
+  // questions are rated relative to time scale of total questions
+  private getLaskAskedDaysRange(questions: Question[]): any {
+    const datesArray = questions.map(question => question.dateUpdated);
+    const sortedDates = datesArray.sort((a, b) => a.getTime() - b.getTime());
+    const longestAgo = sortedDates[0];
+    const mostRecentDate = sortedDates[sortedDates.length - 1];
+    const diffTime = Math.abs(mostRecentDate.getTime() - longestAgo.getTime());
+    const lastAskedDaysRange = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return {mostRecentDate, lastAskedDaysRange};
+  }
+
+  // the longer its been since a question has been asked, the lower its rating should be
+  private getLastAskedRating(mostRecent: Date, questionDate: Date, dayRange: number): number {
+    if (dayRange === 0) {
+      return 10;
     }
+    const diffTime = Math.abs(mostRecent.getTime() - questionDate.getTime());
+    const lastAskedDaysSinceMostRecent = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (lastAskedDaysSinceMostRecent === 0) {
+      return 10;
+    }
+    return Math.round(10 - lastAskedDaysSinceMostRecent / dayRange * 10);
+  }
+   // the more a question is answered incorrectly, the lower its rating should be
+   private async getCorrectnessRating(question: Question): Promise<number> {
+
+    const timesQuestionAnswered: TimesQuestionAnswered = await this.getTimesQuestionAnswered(question.id);
+    const { timesAsked,  timesAnsweredCorrectly} = timesQuestionAnswered;
+    if (timesAsked <= 3) {
+      return 0;
+    }
+    return Math.round(timesAnsweredCorrectly / timesAsked * 10);
 
   }
+
 
   getTimesQuestionAnswered(questionId): Promise<TimesQuestionAnswered> {
     return new Promise(resolve =>
@@ -301,14 +317,15 @@ export class QuizService {
 
   saveQuizResults(quiz: Quiz): Promise<Quiz> {
     return this.saveAnswers(quiz)
-      .then((quiz: Quiz) => {
+      .then((savedQuiz: Quiz) => {
         quiz.dateCompleted = new Date;
-        return this.add(quiz);
+        return this.add(savedQuiz)
+        .then(quizId => {
+          savedQuiz.id = quizId;
+          return savedQuiz;
+        });
       })
-      .then(quizId => {
-        quiz.id = quizId;
-        return quiz;
-      });
+      ;
   }
 
   saveAnswers(quiz: Quiz): Promise<Quiz> {
@@ -333,7 +350,7 @@ export class QuizService {
       .subscribe((quizzes: Quiz[]) => {
 
         const deletingAnswersPromises: Promise<void>[] = [];
-        const updatingQuizPromise: Promise<void>[] = [];
+        const updatingQuizPromises: Promise<void>[] = [];
 
         quizzes.forEach((quiz: Quiz) => {
           quiz.questionsAndAnswers.forEach((questionAndAnswer: QuestionAndAnswer) => {
@@ -341,15 +358,15 @@ export class QuizService {
               deletingAnswersPromises.push(this._answerService.delete(questionAndAnswer.answer));
               const updatedQuiz: Quiz = Object.assign({}, quiz);
               updatedQuiz.questionsAndAnswers = quiz.questionsAndAnswers.filter(
-                (questionAndAnswer: QuestionAndAnswer) => questionAndAnswer.question.id !== id
+                (qAndA: QuestionAndAnswer) => qAndA.question.id !== id
               );
               console.log(`updating quiz, removed questionAndAnswer because question was deleted`, quiz, updatedQuiz);
-              this.update(updatedQuiz);
+              updatingQuizPromises.push(this.update(updatedQuiz));
             }
           });
         });
 
-        Promise.all([...deletingAnswersPromises, ...updatingQuizPromise]).then(() => resolve());
+        Promise.all([...deletingAnswersPromises, ...updatingQuizPromises]).then(() => resolve());
 
       })
     );
@@ -365,7 +382,7 @@ export class QuizService {
           quiz.tags.forEach((tag: Tag) => {
             if (tag.id === id) {
               const updatedQuiz: Quiz = Object.assign({}, quiz);
-              updatedQuiz.tags = quiz.tags.filter((tag: Tag) => tag.id !== id);
+              updatedQuiz.tags = quiz.tags.filter((t: Tag) => t.id !== id);
               console.log(`updating quiz, removed tag because tag was deleted`, quiz, updatedQuiz);
               this.update(updatedQuiz).then(() => resolve());
             }

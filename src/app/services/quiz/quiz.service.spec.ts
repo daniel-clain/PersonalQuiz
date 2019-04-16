@@ -65,12 +65,6 @@ describe('QuizService', () => {
   });
 
 
-  xdescribe('test', () => {
-    it('should add 2 and 5 and the result should be 7', () => {
-      const testResult = quizService.test(2, 5);
-      expect(testResult).toBe(7);
-    });
-  });
 
   describe('rateQuestions', () => {
     it('should rate question', done => {

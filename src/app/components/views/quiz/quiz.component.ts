@@ -89,7 +89,6 @@ export class QuizComponent implements OnInit {
     this._quizService.saveQuizResults(this.newQuiz)
     .then((savedQuiz: Quiz) => {
       console.log('savedQuiz :', savedQuiz);
-      debugger;
       this.selectedQuiz = savedQuiz;
       delete this.questionNumber;
       this.quizState = QuizStates['Post-Quiz Summary'];

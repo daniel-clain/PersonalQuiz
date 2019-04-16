@@ -1,4 +1,3 @@
-import {TestService} from './../../../services/test/test.service';
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Question } from 'src/app/models/question';
@@ -27,13 +26,11 @@ export class QuestionManagementComponent implements OnInit {
     dateUpdated: null
   };
 
-  constructor(private _questionService: QuestionService, private _tagService: TagService, private _testService: TestService) { }
+  constructor(private _questionService: QuestionService, private _tagService: TagService) { }
 
   ngOnInit() {
     this.questions$ = this._questionService.questions$;
     this.tags$ = this._tagService.tags$;
-    const returnVal = this._testService.doTest();
-    console.log('returnVal :', returnVal);
   }
 
   toggleQuestionTag(question: Question, clickedTag: Tag) {
